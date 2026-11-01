@@ -32,6 +32,22 @@ const translations = {
     noSchemes: 'कोई योजना नहीं मिली',
     disclaimer: 'केवल जानकारी। आवेदन करने से पहले आधिकारिक पोर्टल पर सत्यापित करें।',
   },
+
+    kn: {
+    appName: 'ಸ್ಕೀಮ್‌ಸಾಥಿ',
+    schemes: 'ಯೋಜನೆಗಳು',
+    login: 'ಲಾಗ್ ಇನ್',
+    register: 'ನೋಂದಣಿ',
+    logout: 'ಲಾಗ್ ಔಟ್',
+    name: 'ಹೆಸರು',
+    email: 'ಇಮೇಲ್',
+    password: 'ಪಾಸ್‌ವರ್ಡ್',
+    search: 'ಹುಡುಕಿ',
+    allCategories: 'ಎಲ್ಲಾ ವರ್ಗಗಳು',
+    loading: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ',
+    noSchemes: 'ಯಾವುದೇ ಯೋಜನೆ ಕಂಡುಬಂದಿಲ್ಲ',
+    disclaimer: 'ಮಾಹಿತಿಗಾಗಿ ಮಾತ್ರ. ಅರ್ಜಿ ಸಲ್ಲಿಸುವ ಮೊದಲು ಅಧಿಕೃತ ಪೋರ್ಟಲ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ.',
+  },
 };
 
 const LangContext = createContext(null);

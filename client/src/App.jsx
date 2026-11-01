@@ -35,6 +35,7 @@ export default function App() {
             <select value={lang} onChange={(e) => setLang(e.target.value)}>
               <option value="en">English</option>
               <option value="hi">हिन्दी</option>
+              <option value="kn">ಕನ್ನಡ</option>
             </select>
           </label>
         </nav>
