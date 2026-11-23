@@ -137,6 +137,73 @@ select {
   padding-top: 1.25rem;
 }
 
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--surface);
+  border-radius: 8px;
+  transform: translateY(-180%);
+  z-index: 1;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.home-intro {
+  padding: clamp(1.5rem, 7vw, 5rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.page .home-intro h1 {
+  max-width: 18ch;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.home-intro p {
+  max-width: 52ch;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
+.eligibility-form .status {
+  margin: 0;
+}
+
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.primary-action,
+.secondary-action {
+  display: inline-block;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  font-weight: 650;
+}
+
+.primary-action {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.alert button {
+  margin-inline-start: 0.75rem;
+}
+
 .page h1 {
   margin: 0 0 1rem;
   font-size: 1.6rem;
@@ -166,6 +233,20 @@ select {
   display: grid;
   gap: 0.35rem;
   font-weight: 600;
+}
+
+.eligibility-form,
+.eligibility-result {
+  max-width: 42rem;
+}
+
+.eligibility-form {
+  min-width: 0;
+  margin: 0;
+}
+
+.eligibility-result {
+  margin-top: 1rem;
 }
 
 .form button {
@@ -251,7 +332,7 @@ select {
 }
 
 @media (min-width: 960px) {
-  .page h1 {
+  .page > h1 {
     font-size: 1.9rem;
   }
 

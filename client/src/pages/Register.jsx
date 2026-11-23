@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import { useAuth } from '../AuthContext';
-import { useLang } from '../i18n';
+import { useAuth } from '../useAuth';
+import { useLang } from '../useLang';
 
 export default function Register() {
   const { t } = useLang();
@@ -26,7 +26,8 @@ export default function Register() {
       signIn(data);
       navigate('/schemes');
     } catch (err) {
-      setError(err.message);
+      const messages = { 409: 'emailInUse', 429: 'rateLimited' };
+      setError(messages[err.status] ?? 'registerFailed');
     } finally {
       setSubmitting(false);
     }
@@ -36,7 +37,7 @@ export default function Register() {
     <main className="page">
       <form className="card form" onSubmit={handleSubmit}>
         <h1>{t('register')}</h1>
-        {error ? <p className="alert" role="alert">{error}</p> : null}
+        {error ? <p className="alert" role="alert">{t(error)}</p> : null}
         <label>
           {t('name')}
           <input

@@ -1,0 +1,123 @@
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { api } from '../api';
+import { copy, schemeQuestions } from '../eligibilityContent';
+import { useLang } from '../useLang';
+
+const schemeOptions = Object.entries(schemeQuestions);
+const languageIndex = { en: 0, hi: 1, kn: 2 };
+const answerOptions = ['yes', 'no', 'unknown'];
+
+export default function Eligibility() {
+  const [params] = useSearchParams();
+  const requested = params.get('scheme');
+  const slug = Object.hasOwn(schemeQuestions, requested) ? requested : schemeOptions[0][0];
+  return <EligibilityForm key={slug} initialSlug={slug} />;
+}
+
+function EligibilityForm({ initialSlug }) {
+  const { lang, t } = useLang();
+  const [slug, setSlug] = useState(initialSlug);
+  const [source, setSource] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [result, setResult] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const { questions } = schemeQuestions[slug];
+  const local = (values) => values[languageIndex[lang]] ?? values[0];
+
+  useEffect(() => {
+    let active = true;
+    api(`/api/eligibility/${slug}`).then(({ sourceUrl }) => {
+      if (active) setSource({ slug, sourceUrl });
+    }).catch(() => {
+      if (active) setSource(null);
+    });
+    return () => { active = false; };
+  }, [slug]);
+
+  function clearFeedback() {
+    setResult(null);
+    setFailed(false);
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    clearFeedback();
+    setSubmitting(true);
+    try {
+      setResult(await api(`/api/eligibility/${slug}`, {
+        method: 'POST',
+        body: { answers },
+      }));
+    } catch {
+      setFailed(true);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <main className="page">
+      <h1>{t('eligibility')}</h1>
+      <p>{local(copy.intro)}</p>
+      <form onSubmit={handleSubmit}>
+        <fieldset className="card form eligibility-form" disabled={submitting}>
+          <label>
+            {local(copy.choose)}
+            <select value={slug} onChange={(event) => {
+              setSlug(event.target.value);
+              setAnswers({});
+              clearFeedback();
+            }}>
+              {schemeOptions.map(([value, scheme]) => (
+                <option key={value} value={value}>{local(scheme.title)}</option>
+              ))}
+            </select>
+          </label>
+          {copy.scope[slug] && <p className="status">{local(copy.scope[slug])}</p>}
+          {source?.slug === slug && (
+            <a href={source.sourceUrl} target="_blank" rel="noreferrer">{local(copy.official)}</a>
+          )}
+          {Object.entries(questions).map(([key, question]) => (
+            <label key={key}>
+              {local(question)}
+              <select required value={answers[key] ?? ''} onChange={(event) => {
+                setAnswers({ ...answers, [key]: event.target.value });
+                clearFeedback();
+              }}>
+                <option value="">{local(copy.select)}</option>
+                {answerOptions.map((answer) => (
+                  <option key={answer} value={answer}>{local(copy[answer])}</option>
+                ))}
+              </select>
+            </label>
+          ))}
+          <button type="submit">{submitting ? t('loading') : t('eligibility')}</button>
+        </fieldset>
+      </form>
+      {failed && <p role="alert" className="alert">{local(copy.failed)}</p>}
+      <div aria-live="polite">
+        {result && (
+          <section className="card eligibility-result">
+            <h2>{local(copy[result.status])}</h2>
+            <ul>
+              {result.checks.map(({ key, status }) => (
+                <li key={key}>
+                  {local(questions[key])}{' '}
+                  <strong>{local(copy[answers[key]])}.</strong>{' '}
+                  {local(copy[status === 'matched' ? 'matchedCheck' : status])}.
+                  {key === 'familyAccounts' && answers[key] === 'yes' && (
+                    <p>{local(copy.familyException)}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p>{t('disclaimer')}</p>
+            <a href={result.sourceUrl} target="_blank" rel="noreferrer">{local(copy.official)}</a>
+          </section>
+        )}
+      </div>
+    </main>
+  );
+}

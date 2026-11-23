@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { useLang } from '../i18n';
-
-function localized(value, lang) {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  return value[lang] || value.en || '';
-}
+import { useLang } from '../useLang';
+import { localized } from '../schemeText';
 
 export default function Schemes() {
   const { t, lang } = useLang();
@@ -15,6 +11,7 @@ export default function Schemes() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +38,7 @@ export default function Schemes() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   const categories = useMemo(() => {
     return [...new Set(schemes.map((scheme) => scheme.category).filter(Boolean))].sort();
@@ -54,11 +51,11 @@ export default function Schemes() {
       if (!q) return true;
       const title = localized(scheme.title, lang).toLowerCase();
       const summary = localized(scheme.summary, lang).toLowerCase();
-      const state = String(scheme.state || '').toLowerCase();
-      const cat = String(scheme.category || '').toLowerCase();
-      return title.includes(q) || summary.includes(q) || state.includes(q) || cat.includes(q);
+      const state = scheme.state === 'All India' ? t('allIndia') : scheme.state || '';
+      const cat = scheme.category || '';
+      return [title, summary, state, cat, t(cat)].some((text) => text.toLowerCase().includes(q));
     });
-  }, [schemes, query, category, lang]);
+  }, [schemes, query, category, lang, t]);
 
   return (
     <main className="page">
@@ -86,14 +83,17 @@ export default function Schemes() {
           <option value="">{t('allCategories')}</option>
           {categories.map((item) => (
             <option key={item} value={item}>
-              {item}
+              {t(item)}
             </option>
           ))}
         </select>
       </div>
 
       {loading ? <p className="status">{t('loading')}…</p> : null}
-      {!loading && error ? <p className="alert" role="alert">{error}</p> : null}
+      {!loading && error ? <p className="alert" role="alert">
+        {t('loadFailed')}
+        <button type="button" onClick={() => setAttempt((value) => value + 1)}>{t('retry')}</button>
+      </p> : null}
       {!loading && !error && filtered.length === 0 ? (
         <p className="status">{t('noSchemes')}</p>
       ) : null}
@@ -102,10 +102,10 @@ export default function Schemes() {
         <ul className="grid">
           {filtered.map((scheme) => (
             <li key={scheme._id} className="card scheme-card">
-              <h2>{localized(scheme.title, lang)}</h2>
+              <h2><Link to={`/schemes/${scheme._id}`}>{localized(scheme.title, lang)}</Link></h2>
               <p className="meta">
-                <span>{scheme.category}</span>
-                {scheme.state ? <span>{scheme.state}</span> : null}
+                <span>{t(scheme.category)}</span>
+                {scheme.state ? <span>{scheme.state === 'All India' ? t('allIndia') : scheme.state}</span> : null}
               </p>
               <p>{localized(scheme.summary, lang)}</p>
             </li>

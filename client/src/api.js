@@ -1,5 +1,5 @@
 export async function api(path, { method = 'GET', body, token } = {}) {
-  const base = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const base = (import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:5000' : '')).replace(/\/+$/, '');
   const headers = {};
 
   if (body !== undefined) {
@@ -13,9 +13,10 @@ export async function api(path, { method = 'GET', body, token } = {}) {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(10_000),
   });
 
-  let data = null;
+  let data;
   try {
     data = await res.json();
   } catch {
@@ -23,7 +24,9 @@ export async function api(path, { method = 'GET', body, token } = {}) {
   }
 
   if (!res.ok) {
-    throw new Error((data && data.error) || 'Request failed');
+    const error = new Error(data?.error || 'Request failed');
+    error.status = res.status;
+    throw error;
   }
 
   return data;

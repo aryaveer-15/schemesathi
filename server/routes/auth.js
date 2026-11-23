@@ -20,9 +20,9 @@ function publicUser(user) {
   };
 }
 
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res, next) => {
   try {
-    const { name, email, password, preferredLanguage } = req.body;
+    const { name, email, password, preferredLanguage } = req.body ?? {};
     if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({ error: 'name, email and password are required' });
     }
@@ -41,14 +41,14 @@ router.post('/register', async (req, res) => {
     });
     res.status(201).json({ token: signToken(user), user: publicUser(user) });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    if (err.code === 11000) return res.status(409).json({ error: 'Email already registered' });
+    next(err);
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body ?? {};
     if (typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({ error: 'email and password are required' });
     }
@@ -57,8 +57,7 @@ router.post('/login', async (req, res) => {
     if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
     res.json({ token: signToken(user), user: publicUser(user) });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    next(err);
   }
 });
 

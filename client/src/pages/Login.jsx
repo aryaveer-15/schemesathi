@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import { useAuth } from '../AuthContext';
-import { useLang } from '../i18n';
+import { useAuth } from '../useAuth';
+import { useLang } from '../useLang';
 
 export default function Login() {
   const { t } = useLang();
@@ -25,7 +25,8 @@ export default function Login() {
       signIn(data);
       navigate('/schemes');
     } catch (err) {
-      setError(err.message);
+      const messages = { 401: 'invalidLogin', 429: 'rateLimited' };
+      setError(messages[err.status] ?? 'loginFailed');
     } finally {
       setSubmitting(false);
     }
@@ -35,7 +36,7 @@ export default function Login() {
     <main className="page">
       <form className="card form" onSubmit={handleSubmit}>
         <h1>{t('login')}</h1>
-        {error ? <p className="alert" role="alert">{error}</p> : null}
+        {error ? <p className="alert" role="alert">{t(error)}</p> : null}
         <label>
           {t('email')}
           <input
