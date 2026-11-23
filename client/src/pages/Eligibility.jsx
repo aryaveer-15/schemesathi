@@ -23,7 +23,10 @@ function EligibilityForm({ initialSlug }) {
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [showMissing, setShowMissing] = useState(false);
   const { questions } = schemeQuestions[slug];
+  const missing = Object.keys(questions).find((key) => !answers[key]);
+  const missingId = missing && `answer-${missing}`;
   const local = (values) => values[languageIndex[lang]] ?? values[0];
 
   useEffect(() => {
@@ -44,6 +47,12 @@ function EligibilityForm({ initialSlug }) {
   async function handleSubmit(event) {
     event.preventDefault();
     clearFeedback();
+    if (missingId) {
+      setShowMissing(true);
+      event.currentTarget.elements.namedItem(missingId)?.focus();
+      return;
+    }
+    setShowMissing(false);
     setSubmitting(true);
     try {
       setResult(await api(`/api/eligibility/${slug}`, {
@@ -61,13 +70,14 @@ function EligibilityForm({ initialSlug }) {
     <main className="page">
       <h1>{t('eligibility')}</h1>
       <p>{local(copy.intro)}</p>
-      <form onSubmit={handleSubmit}>
+      <form noValidate onSubmit={handleSubmit}>
         <fieldset className="card form eligibility-form" disabled={submitting}>
           <label>
             {local(copy.choose)}
             <select value={slug} onChange={(event) => {
               setSlug(event.target.value);
               setAnswers({});
+              setShowMissing(false);
               clearFeedback();
             }}>
               {schemeOptions.map(([value, scheme]) => (
@@ -80,12 +90,19 @@ function EligibilityForm({ initialSlug }) {
             <a href={source.sourceUrl} target="_blank" rel="noreferrer">{local(copy.official)}</a>
           )}
           {Object.entries(questions).map(([key, question]) => (
-            <label key={key}>
+            <label key={key} htmlFor={`answer-${key}`}>
               {local(question)}
-              <select required value={answers[key] ?? ''} onChange={(event) => {
+              <select
+                id={`answer-${key}`}
+                required
+                aria-invalid={showMissing && !answers[key] ? true : undefined}
+                aria-describedby={showMissing && !answers[key] ? 'missing-answers' : undefined}
+                value={answers[key] ?? ''}
+                onChange={(event) => {
                 setAnswers({ ...answers, [key]: event.target.value });
                 clearFeedback();
-              }}>
+                }}
+              >
                 <option value="">{local(copy.select)}</option>
                 {answerOptions.map((answer) => (
                   <option key={answer} value={answer}>{local(copy[answer])}</option>
@@ -93,6 +110,9 @@ function EligibilityForm({ initialSlug }) {
               </select>
             </label>
           ))}
+          {showMissing && missing && (
+            <p id="missing-answers" role="alert" className="alert">{local(copy.answerRequired)}</p>
+          )}
           <button type="submit">{submitting ? t('loading') : t('eligibility')}</button>
         </fieldset>
       </form>

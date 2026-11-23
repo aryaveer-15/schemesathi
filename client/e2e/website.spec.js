@@ -33,11 +33,16 @@ test('home, keyboard navigation, catalog and eligibility result', async ({ page 
   await expect(page.getByRole('link', { name: 'Visit the official scheme website' })).toHaveAttribute('href', scheme.sourceUrl);
   await page.getByRole('main').getByRole('link', { name: 'Check eligibility' }).click();
   await expect(page.getByLabel('Scheme to check')).toHaveValue(scheme.slug);
+  await page.getByRole('button', { name: 'Check eligibility' }).click();
+  await expect(page.getByRole('alert')).toContainText('Answer every question');
+  await expect(page.getByLabel('Is the applicant a woman aged 18 or older?')).toBeFocused();
+  await expect(page.getByLabel('Is the applicant a woman aged 18 or older?')).toHaveAttribute('aria-invalid', 'true');
   await page.getByLabel('Is the applicant a woman aged 18 or older?').selectOption('yes');
   await page.getByLabel('Does anyone in the household already have an LPG connection?').selectOption('no');
   await page.getByLabel('Does the household qualify as poor under the official deprivation declaration?').selectOption('yes');
   await page.getByRole('button', { name: 'Check eligibility' }).click();
   await expect(page.getByRole('heading', { name: 'Potential match' })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
 test('recovers from an unavailable API and handles missing schemes', async ({ page }) => {
