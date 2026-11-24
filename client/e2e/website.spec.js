@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { schemeQuestions } from '../src/eligibilityContent.js';
+import { additionalTranslations } from '../src/locales/index.js';
+import { translatedScheme } from '../src/schemeText.js';
 
 const scheme = {
   _id: '64f000000000000000000001',
@@ -75,5 +78,36 @@ test('keeps the selected language and clears expired sign-ins', async ({ page })
   await expect(page.getByRole('heading', { name: 'सरकारी योजनाएँ खोजें' })).toBeVisible();
   await page.getByLabel('भाषा').selectOption('kn');
   await expect(page.getByRole('heading', { name: 'ಸರ್ಕಾರಿ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕಿ' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+});
+
+test('all added languages translate the site, catalog, and eligibility forms', async ({ page }) => {
+  await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme] }));
+  await page.route('**/api/eligibility/*', (route) => route.fulfill({ json: { sourceUrl: scheme.sourceUrl } }));
+  await page.goto('/');
+  const language = page.getByRole('banner').getByRole('combobox');
+  for (const [code, copy] of Object.entries(additionalTranslations)) {
+    await language.selectOption(code);
+    await expect(page.getByRole('heading', { name: copy.homeTitle })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', code);
+    await expect(page.locator('html')).toHaveAttribute('dir', code === 'ur' ? 'rtl' : 'ltr');
+    for (const [slug, { questions }] of Object.entries(schemeQuestions)) {
+      expect(translatedScheme(slug, 'title', code)).toBeTruthy();
+      expect(translatedScheme(slug, 'summary', code)).toBeTruthy();
+      for (const key of Object.keys(questions)) {
+        expect(copy[key], `${code} translation for ${slug} question ${key}`).toBeTruthy();
+      }
+    }
+  }
+  await language.selectOption('ur');
+  await page.getByRole('link', { name: additionalTranslations.ur.browse }).click();
+  await page.getByRole('searchbox').fill('اجولا');
+  await expect(page.getByRole('link', { name: additionalTranslations.ur.ujjwalaTitle })).toBeVisible();
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await page.getByRole('navigation').getByRole('link', { name: additionalTranslations.ur.eligibility }).click();
+  await expect(page.getByLabel(additionalTranslations.ur.pensionAge)).toBeVisible();
+  await page.getByRole('button', { name: additionalTranslations.ur.eligibility }).click();
+  await expect(page.getByRole('alert')).toHaveText(additionalTranslations.ur.answerRequired);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
 });

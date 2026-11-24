@@ -42,6 +42,7 @@ export default function Register() {
           {t('name')}
           <input
             type="text"
+            dir="auto"
             name="name"
             autoComplete="name"
             value={name}
@@ -53,6 +54,7 @@ export default function Register() {
           {t('email')}
           <input
             type="email"
+            dir="ltr"
             name="email"
             autoComplete="email"
             value={email}

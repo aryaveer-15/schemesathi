@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { LangContext } from './useLang';
+import { additionalText, languages } from './locales';
 
 const translations = {
   en: {
@@ -134,7 +135,7 @@ const LANGUAGE_KEY = 'schemesathi.language';
 function loadLanguage() {
   try {
     const saved = localStorage.getItem(LANGUAGE_KEY);
-    if (Object.hasOwn(translations, saved)) return saved;
+    if (languages.some(({ code }) => code === saved)) return saved;
   } catch {
     // Storage is optional.
   }
@@ -146,6 +147,7 @@ export function LangProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.lang = lang;
+    document.documentElement.dir = languages.find(({ code }) => code === lang)?.direction ?? 'ltr';
     try {
       localStorage.setItem(LANGUAGE_KEY, lang);
     } catch {
@@ -155,7 +157,7 @@ export function LangProvider({ children }) {
 
   const value = useMemo(() => {
     function t(key) {
-      return translations[lang]?.[key] ?? translations.en[key] ?? key;
+      return additionalText(lang, key) ?? translations[lang]?.[key] ?? translations.en[key] ?? key;
     }
     return { lang, setLang, t };
   }, [lang]);

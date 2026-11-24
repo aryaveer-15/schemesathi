@@ -3,10 +3,17 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { copy, schemeQuestions } from '../eligibilityContent';
 import { useLang } from '../useLang';
+import { additionalText } from '../locales';
+import { translatedScheme } from '../schemeText';
 
 const schemeOptions = Object.entries(schemeQuestions);
 const languageIndex = { en: 0, hi: 1, kn: 2 };
 const answerOptions = ['yes', 'no', 'unknown'];
+const scopeKeys = {
+  'pm-awas-yojana': 'housingScope',
+  'ayushman-bharat-pmjay': 'healthScope',
+  'nsap-pension': 'pensionScope',
+};
 
 export default function Eligibility() {
   const [params] = useSearchParams();
@@ -27,7 +34,8 @@ function EligibilityForm({ initialSlug }) {
   const { questions } = schemeQuestions[slug];
   const missing = Object.keys(questions).find((key) => !answers[key]);
   const missingId = missing && `answer-${missing}`;
-  const local = (values) => values[languageIndex[lang]] ?? values[0];
+  const local = (key, values = copy[key]) => additionalText(lang, key)
+    ?? values[languageIndex[lang]] ?? values[0];
 
   useEffect(() => {
     let active = true;
@@ -69,11 +77,11 @@ function EligibilityForm({ initialSlug }) {
   return (
     <main className="page">
       <h1>{t('eligibility')}</h1>
-      <p>{local(copy.intro)}</p>
+      <p>{local('intro')}</p>
       <form noValidate onSubmit={handleSubmit}>
         <fieldset className="card form eligibility-form" disabled={submitting}>
           <label>
-            {local(copy.choose)}
+            {local('choose')}
             <select value={slug} onChange={(event) => {
               setSlug(event.target.value);
               setAnswers({});
@@ -81,17 +89,19 @@ function EligibilityForm({ initialSlug }) {
               clearFeedback();
             }}>
               {schemeOptions.map(([value, scheme]) => (
-                <option key={value} value={value}>{local(scheme.title)}</option>
+                <option key={value} value={value}>
+                  {translatedScheme(value, 'title', lang) ?? local('title', scheme.title)}
+                </option>
               ))}
             </select>
           </label>
-          {copy.scope[slug] && <p className="status">{local(copy.scope[slug])}</p>}
+          {copy.scope[slug] && <p className="status">{local(scopeKeys[slug], copy.scope[slug])}</p>}
           {source?.slug === slug && (
-            <a href={source.sourceUrl} target="_blank" rel="noreferrer">{local(copy.official)}</a>
+            <a href={source.sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a>
           )}
           {Object.entries(questions).map(([key, question]) => (
             <label key={key} htmlFor={`answer-${key}`}>
-              {local(question)}
+              {local(key, question)}
               <select
                 id={`answer-${key}`}
                 required
@@ -103,38 +113,38 @@ function EligibilityForm({ initialSlug }) {
                 clearFeedback();
                 }}
               >
-                <option value="">{local(copy.select)}</option>
+                <option value="">{local('select')}</option>
                 {answerOptions.map((answer) => (
-                  <option key={answer} value={answer}>{local(copy[answer])}</option>
+                  <option key={answer} value={answer}>{local(answer)}</option>
                 ))}
               </select>
             </label>
           ))}
           {showMissing && missing && (
-            <p id="missing-answers" role="alert" className="alert">{local(copy.answerRequired)}</p>
+            <p id="missing-answers" role="alert" className="alert">{local('answerRequired')}</p>
           )}
           <button type="submit">{submitting ? t('loading') : t('eligibility')}</button>
         </fieldset>
       </form>
-      {failed && <p role="alert" className="alert">{local(copy.failed)}</p>}
+      {failed && <p role="alert" className="alert">{local('failed')}</p>}
       <div aria-live="polite">
         {result && (
           <section className="card eligibility-result">
-            <h2>{local(copy[result.status])}</h2>
+            <h2>{local(result.status)}</h2>
             <ul>
               {result.checks.map(({ key, status }) => (
                 <li key={key}>
-                  {local(questions[key])}{' '}
-                  <strong>{local(copy[answers[key]])}.</strong>{' '}
-                  {local(copy[status === 'matched' ? 'matchedCheck' : status])}.
+                  {local(key, questions[key])}{' '}
+                  <strong>{local(answers[key])}</strong>{' '}
+                  {local(status === 'matched' ? 'matchedCheck' : status)}
                   {key === 'familyAccounts' && answers[key] === 'yes' && (
-                    <p>{local(copy.familyException)}</p>
+                    <p>{local('familyException')}</p>
                   )}
                 </li>
               ))}
             </ul>
             <p>{t('disclaimer')}</p>
-            <a href={result.sourceUrl} target="_blank" rel="noreferrer">{local(copy.official)}</a>
+            <a href={result.sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a>
           </section>
         )}
       </div>

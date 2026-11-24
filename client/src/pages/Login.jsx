@@ -41,6 +41,7 @@ export default function Login() {
           {t('email')}
           <input
             type="email"
+            dir="ltr"
             name="email"
             autoComplete="email"
             value={email}

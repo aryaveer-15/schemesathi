@@ -1,6 +1,7 @@
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { useAuth } from './useAuth';
 import { useLang } from './useLang';
+import { languages } from './locales';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Schemes from './pages/Schemes';
@@ -24,7 +25,7 @@ export default function App() {
           <NavLink to="/eligibility">{t('eligibility')}</NavLink>
           {user ? (
             <>
-              <span className="greeting">{t('hello')}, {user.name}</span>
+              <span className="greeting">{t('hello')}, <bdi>{user.name}</bdi></span>
               <button type="button" className="linkish" onClick={signOut}>
                 {t('logout')}
               </button>
@@ -38,9 +39,9 @@ export default function App() {
           <label className="lang">
             <span className="sr-only">{t('language')}</span>
             <select value={lang} onChange={(e) => setLang(e.target.value)}>
-              <option value="en">English</option>
-              <option value="hi">हिन्दी</option>
-              <option value="kn">ಕನ್ನಡ</option>
+              {languages.map(({ code, label, direction }) => (
+                <option key={code} value={code} lang={code} dir={direction ?? 'ltr'}>{label}</option>
+              ))}
             </select>
           </label>
         </nav>

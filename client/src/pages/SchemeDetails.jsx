@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { schemeQuestions } from '../eligibilityContent';
 import { useLang } from '../useLang';
-import { localized } from '../schemeText';
+import { localizedScheme } from '../schemeText';
 
 export default function SchemeDetails() {
   const { id } = useParams();
@@ -39,12 +39,12 @@ function SchemeDetailsContent({ id }) {
       {!error && !scheme && <p role="status">{t('loading')}…</p>}
       {scheme && (
         <article className="card">
-          <h1>{localized(scheme.title, lang)}</h1>
+          <h1>{localizedScheme(scheme, 'title', lang)}</h1>
           <p className="meta">
             <span>{t(scheme.category)}</span>
             {scheme.state && <span>{scheme.state === 'All India' ? t('allIndia') : scheme.state}</span>}
           </p>
-          <p>{localized(scheme.summary, lang)}</p>
+          <p>{localizedScheme(scheme, 'summary', lang)}</p>
           {Object.hasOwn(schemeQuestions, scheme.slug) && (
             <p><Link to={`/eligibility?scheme=${encodeURIComponent(scheme.slug)}`}>{t('eligibility')}</Link></p>
           )}

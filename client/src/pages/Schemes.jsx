@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useLang } from '../useLang';
-import { localized } from '../schemeText';
+import { localizedScheme } from '../schemeText';
 
 export default function Schemes() {
   const { t, lang } = useLang();
@@ -45,15 +45,16 @@ export default function Schemes() {
   }, [schemes]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim().normalize('NFC').toLowerCase();
     return schemes.filter((scheme) => {
       if (category && scheme.category !== category) return false;
       if (!q) return true;
-      const title = localized(scheme.title, lang).toLowerCase();
-      const summary = localized(scheme.summary, lang).toLowerCase();
+      const title = localizedScheme(scheme, 'title', lang);
+      const summary = localizedScheme(scheme, 'summary', lang);
       const state = scheme.state === 'All India' ? t('allIndia') : scheme.state || '';
       const cat = scheme.category || '';
-      return [title, summary, state, cat, t(cat)].some((text) => text.toLowerCase().includes(q));
+      return [title, summary, state, cat, t(cat), localizedScheme(scheme, 'title', 'en')]
+        .some((text) => text.normalize('NFC').toLowerCase().includes(q));
     });
   }, [schemes, query, category, lang, t]);
 
@@ -102,12 +103,12 @@ export default function Schemes() {
         <ul className="grid">
           {filtered.map((scheme) => (
             <li key={scheme._id} className="card scheme-card">
-              <h2><Link to={`/schemes/${scheme._id}`}>{localized(scheme.title, lang)}</Link></h2>
+              <h2><Link to={`/schemes/${scheme._id}`}>{localizedScheme(scheme, 'title', lang)}</Link></h2>
               <p className="meta">
                 <span>{t(scheme.category)}</span>
                 {scheme.state ? <span>{scheme.state === 'All India' ? t('allIndia') : scheme.state}</span> : null}
               </p>
-              <p>{localized(scheme.summary, lang)}</p>
+              <p>{localizedScheme(scheme, 'summary', lang)}</p>
             </li>
           ))}
         </ul>

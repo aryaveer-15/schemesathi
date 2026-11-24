@@ -1,6 +1,6 @@
 # SchemeSathi
 
-SchemeSathi is a government-scheme directory with preliminary eligibility checks in English, Hindi, and Kannada.
+SchemeSathi is a government-scheme directory with preliminary eligibility checks in English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, and Malayalam.
 
 ## Run locally
 
@@ -32,5 +32,7 @@ Set a host health check on `GET /api/health`. It returns HTTP 503 when MongoDB i
 ## Maintain scheme information
 
 Edit `server/catalog.js` to update the eight maintained entries. Existing scheme IDs and MongoDB records are preserved. The API publishes maintained titles, summaries, and source URLs for those slugs. Keep the questions in `client/src/eligibilityContent.js` and their checks in `server/routes/eligibility.js` aligned with official criteria.
+
+When updating user-facing text or maintained scheme content, update the corresponding translations in `client/src/locales/`. The original English, Hindi, and Kannada copies are in `client/src/i18n.jsx`, `client/src/eligibilityContent.js`, and `server/catalog.js`.
 
 Eligibility results explain whether the answers match the criteria checked by SchemeSathi. Users should confirm current rules with the official programme before applying. The housing check covers PMAY Urban 2.0. PM-JAY coverage for people below 70 requires checking the official beneficiary portal. The pension check covers old-age and widow pensions. The questionnaire directs disability pension applicants to verify applicable rules with their state office.
