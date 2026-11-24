@@ -80,7 +80,7 @@ export default function FindSchemes() {
               const schemes = results.filter((scheme) => scheme.status === status);
               if (!schemes.length) return null;
               return (
-                <section key={status}>
+                <section className="match-results-group" data-result={status} key={status}>
                   <h2>{local(status)}</h2>
                   {schemes.map(({ slug, checks, sourceUrl }) => (
                     <details key={slug} className="card match-section">

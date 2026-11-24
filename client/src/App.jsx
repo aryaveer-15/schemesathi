@@ -20,6 +20,7 @@ export default function App() {
       <a className="skip-link" href="#content">{t('skip')}</a>
       <header className="header">
         <Link to="/" className="brand">
+          <span className="brand-mark" aria-hidden="true">S</span>
           {t('appName')}
         </Link>
         <nav className="nav">
@@ -40,15 +41,15 @@ export default function App() {
               <NavLink to="/register">{t('register')}</NavLink>
             </>
           )}
-          <label className="lang">
-            <span className="sr-only">{t('language')}</span>
-            <select value={lang} onChange={(e) => setLang(e.target.value)}>
-              {languages.map(({ code, label, direction }) => (
-                <option key={code} value={code} lang={code} dir={direction ?? 'ltr'}>{label}</option>
-              ))}
-            </select>
-          </label>
         </nav>
+        <label className="lang">
+          <span className="sr-only">{t('language')}</span>
+          <select value={lang} onChange={(e) => setLang(e.target.value)}>
+            {languages.map(({ code, label, direction }) => (
+              <option key={code} value={code} lang={code} dir={direction ?? 'ltr'}>{label}</option>
+            ))}
+          </select>
+        </label>
       </header>
 
       <div id="content" tabIndex={-1}>

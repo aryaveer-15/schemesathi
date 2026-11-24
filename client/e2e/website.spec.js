@@ -156,3 +156,13 @@ test('guest help chat shows official scheme links without sending chat messages'
   await expect(page.getByText('Choose a topic below or type one of the listed scheme names.')).toBeVisible();
   expect(network.filter(([method, path]) => method !== 'GET' || path.startsWith('/api/chat'))).toEqual([]);
 });
+
+test('the homepage Help chat prompt opens the matching answer', async ({ page }) => {
+  await page.route('**/api/schemes', (route) => route.fulfill({ json: [] }));
+  await page.goto('/');
+  const help = page.getByRole('region', { name: 'Help chat' });
+  await expect(help).toBeVisible();
+  await help.getByRole('link', { name: 'Where do I apply?' }).click();
+  await expect(page).toHaveURL(/\/scheme-chat\?topic=apply$/);
+  await expect(page.getByText('Open a scheme and follow its official link for application instructions.')).toBeVisible();
+});

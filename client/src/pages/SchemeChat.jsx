@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { schemeQuestions, schemeTitle } from '../eligibilityContent';
 import { helpReply } from '../helpTopics';
@@ -21,10 +21,19 @@ const replies = {
 };
 
 export default function SchemeChat() {
+  const [params] = useSearchParams();
+  const initialTopic = params.get('topic');
+  return <ChatPanel key={initialTopic} initialTopic={initialTopic} />;
+}
+
+function ChatPanel({ initialTopic }) {
   const { lang, t } = useLang();
   const { user } = useAuth();
   const [catalog, setCatalog] = useState([]);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    const topic = topics.find(({ key }) => key === initialTopic);
+    return topic ? [{ label: topic.label, reply: { topic: topic.key } }] : [];
+  });
   const [question, setQuestion] = useState('');
 
   useEffect(() => {
@@ -53,13 +62,13 @@ export default function SchemeChat() {
       <h1>{t('schemeChat')}</h1>
       <p>{t('chatIntro')}</p>
       <div className="eligibility-form" aria-live="polite">
-        {messages.map(({ message, reply }, index) => (
+        {messages.map(({ message, label, reply }, index) => (
           <div className="chat-turn" key={index}>
-            <article className="card chat-message" dir="auto">
+            <article className="card chat-message chat-message-question" dir="auto">
               <strong>{t('chatQuestion')}</strong>
-              <p>{message}</p>
+              <p>{label ? t(label) : message}</p>
             </article>
-            <article className="card chat-message">
+            <article className="card chat-message chat-message-answer">
               <strong>{t('schemeChat')}</strong>
               {reply.schemes
                 ? reply.schemes.map((slug) => (

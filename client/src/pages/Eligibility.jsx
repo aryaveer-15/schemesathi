@@ -121,7 +121,7 @@ function EligibilityForm({ initialSlug }) {
       {failed && <p role="alert" className="alert">{local('failed')}</p>}
       <div aria-live="polite">
         {result && (
-          <section className="card eligibility-result">
+          <section className="card eligibility-result" data-result={result.status}>
             <h2>{local(result.status)}</h2>
             <ul>
               {result.checks.map(({ key, status }) => (

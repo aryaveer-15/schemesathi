@@ -103,11 +103,13 @@ export default function Schemes() {
         <ul className="grid">
           {filtered.map((scheme) => (
             <li key={scheme._id} className="card scheme-card">
-              <h2><Link to={`/schemes/${scheme._id}`}>{localizedScheme(scheme, 'title', lang)}</Link></h2>
               <p className="meta">
                 <span>{t(scheme.category)}</span>
                 {scheme.state ? <span>{scheme.state === 'All India' ? t('allIndia') : scheme.state}</span> : null}
               </p>
+              <h2><Link to={`/schemes/${scheme._id}`}>
+                {localizedScheme(scheme, 'title', lang)} <span className="direction-arrow" aria-hidden="true">→</span>
+              </Link></h2>
               <p>{localizedScheme(scheme, 'summary', lang)}</p>
             </li>
           ))}
