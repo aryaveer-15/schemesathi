@@ -7,7 +7,8 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "test": "node --test",
-    "seed": "node seed/schemes.js"
+    "seed": "node seed/schemes.js",
+    "import:catalog": "node seed/catalogImport.js"
   },
   "keywords": [],
   "author": "",

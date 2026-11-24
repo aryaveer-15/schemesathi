@@ -35,10 +35,32 @@ test('one authenticated questionnaire returns matches, exclusions and missing de
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   const { results } = await response.json();
-  assert.equal(results.length, 8);
+  assert.equal(results.length, 10);
   const bySlug = Object.fromEntries(results.map((result) => [result.slug, result]));
   assert.equal(bySlug['atal-pension-yojana'].status, 'matched');
   assert.equal(bySlug['pm-ujjwala-yojana'].status, 'unmatched');
   assert.equal(bySlug['ayushman-bharat-pmjay'].status, 'review');
   assert.deepEqual(bySlug['ayushman-bharat-pmjay'].checks, [{ key: 'beneficiary', status: 'unanswered' }]);
+});
+
+test('shared profile applies to multiple schemes and reviews age boundaries', async () => {
+  const profile = { age: 32, income: 500_000, area: 'rural', citizen: 'yes', savings: 'yes', autoDebit: 'yes' };
+  const response = await post('/eligibility/matches', { profile });
+  assert.equal(response.status, 200);
+  const { results, effectiveAnswers } = await response.json();
+  const bySlug = Object.fromEntries(results.map((result) => [result.slug, result]));
+  assert.equal(bySlug.pmjjby.status, 'matched');
+  assert.equal(bySlug.pmsby.status, 'matched');
+  assert.equal(bySlug['pm-awas-yojana'].status, 'unmatched');
+  assert.equal(effectiveAnswers.pensionAge, 'yes');
+  assert.equal(effectiveAnswers.citizen, 'yes');
+  assert.equal(effectiveAnswers.housingIncome, 'yes');
+  assert.equal(effectiveAnswers.urban, 'no');
+
+  const boundary = await post('/eligibility/matches', { profile: { ...profile, age: 50 } });
+  assert.equal((await boundary.json()).results.find(({ slug }) => slug === 'pmjjby').status, 'review');
+  const accidentBoundary = await post('/eligibility/matches', { profile: { ...profile, age: 69 } });
+  assert.equal((await accidentBoundary.json()).results.find(({ slug }) => slug === 'pmsby').status, 'review');
+  assert.equal((await post('/eligibility/matches', { profile: { age: '32' } })).status, 400);
+  assert.equal((await post('/eligibility/matches', { profile: { aadhaar: 'unknown' } })).status, 400);
 });

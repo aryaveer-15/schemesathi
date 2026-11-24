@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useLang } from '../useLang';
 import { localizedScheme } from '../schemeText';
+import { schemeQuestions } from '../eligibilityContent';
+
+const pageSize = 24;
 
 export default function Schemes() {
   const { t, lang } = useLang();
@@ -11,6 +14,8 @@ export default function Schemes() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
+  const [region, setRegion] = useState('');
+  const [visibleCount, setVisibleCount] = useState(pageSize);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -44,10 +49,15 @@ export default function Schemes() {
     return [...new Set(schemes.map((scheme) => scheme.category).filter(Boolean))].sort();
   }, [schemes]);
 
+  const regions = useMemo(() => [...new Set(schemes
+    .filter((scheme) => scheme.level === 'state' && scheme.state && scheme.state !== 'All India')
+    .map((scheme) => scheme.state))].sort(), [schemes]);
+
   const filtered = useMemo(() => {
     const q = query.trim().normalize('NFC').toLowerCase();
     return schemes.filter((scheme) => {
       if (category && scheme.category !== category) return false;
+      if (region && scheme.level === 'state' && scheme.state !== region) return false;
       if (!q) return true;
       const title = localizedScheme(scheme, 'title', lang);
       const summary = localizedScheme(scheme, 'summary', lang);
@@ -56,13 +66,13 @@ export default function Schemes() {
       return [title, summary, state, cat, t(cat), localizedScheme(scheme, 'title', 'en')]
         .some((text) => text.normalize('NFC').toLowerCase().includes(q));
     });
-  }, [schemes, query, category, lang, t]);
+  }, [schemes, query, category, region, lang, t]);
 
   return (
     <main className="page">
       <h1>{t('schemes')}</h1>
 
-      <div className="toolbar">
+      <div className="toolbar catalog-toolbar">
         <label className="sr-only" htmlFor="scheme-search">
           {t('search')}
         </label>
@@ -71,7 +81,7 @@ export default function Schemes() {
           type="search"
           placeholder={t('search')}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); setVisibleCount(pageSize); }}
         />
         <label className="sr-only" htmlFor="scheme-category">
           {t('allCategories')}
@@ -79,7 +89,7 @@ export default function Schemes() {
         <select
           id="scheme-category"
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) => { setCategory(e.target.value); setVisibleCount(pageSize); }}
         >
           <option value="">{t('allCategories')}</option>
           {categories.map((item) => (
@@ -87,6 +97,14 @@ export default function Schemes() {
               {t(item)}
             </option>
           ))}
+        </select>
+        <label className="sr-only" htmlFor="scheme-region">{t('states')}</label>
+        <select id="scheme-region" value={region} onChange={(e) => {
+          setRegion(e.target.value);
+          setVisibleCount(pageSize);
+        }}>
+          <option value="">{t('states')}</option>
+          {regions.map((state) => <option key={state} value={state}>{state}</option>)}
         </select>
       </div>
 
@@ -101,7 +119,7 @@ export default function Schemes() {
 
       {!loading && filtered.length > 0 ? (
         <ul className="grid">
-          {filtered.map((scheme) => (
+          {filtered.slice(0, visibleCount).map((scheme) => (
             <li key={scheme._id} className="card scheme-card">
               <p className="meta">
                 <span>{t(scheme.category)}</span>
@@ -111,10 +129,18 @@ export default function Schemes() {
                 {localizedScheme(scheme, 'title', lang)} <span className="direction-arrow" aria-hidden="true">→</span>
               </Link></h2>
               <p>{localizedScheme(scheme, 'summary', lang)}</p>
+              {scheme.eligibilityMode !== 'profile' && !Object.hasOwn(schemeQuestions, scheme.slug) && (
+                <p className="muted catalog-coverage">{t('officialCheck')}</p>
+              )}
             </li>
           ))}
         </ul>
       ) : null}
+
+      {!loading && filtered.length > visibleCount && (
+        <p><button type="button" className="secondary-action catalog-more"
+          onClick={() => setVisibleCount((value) => value + pageSize)}>{t('moreSchemes')}</button></p>
+      )}
 
       <p className="disclaimer">{t('disclaimer')}</p>
     </main>

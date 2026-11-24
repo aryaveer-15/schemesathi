@@ -8,7 +8,7 @@ You need Node.js 24, npm, and a MongoDB database.
 
 1. Run `npm ci` in both `server` and `client`.
 2. Copy `server/.env.example` to `server/.env`. Set `MONGO_URI` to your MongoDB connection string, `JWT_SECRET` to a private random string, and `PORT` to `5000`. Keep `.env` out of Git.
-3. In `server`, run `npm run seed` to add the example schemes. This inserts missing slugs and preserves existing scheme records. Run it against the database configured in `server/.env`.
+3. In `server`, run `npm run seed` to add the maintained schemes. This inserts missing slugs and preserves existing scheme records. Run it against the database configured in `server/.env`.
 4. In `server`, run `npm run dev`. In a second terminal, run `npm run dev` in `client` and open the URL Vite prints.
 
 In development the client uses `http://localhost:5000` by default. The production build calls `/api` on the same origin. Set `VITE_API_URL` before running or building the client if the API uses a separate origin.
@@ -31,12 +31,18 @@ Set a host health check on `GET /api/health`. It returns HTTP 503 when MongoDB i
 
 ## Maintain scheme information
 
-Edit `server/catalog.js` to update the eight maintained entries. Existing scheme IDs and MongoDB records are preserved. The API publishes maintained titles, summaries, and source URLs for those slugs. Keep the questions in `client/src/eligibilityContent.js` and their checks in `server/routes/eligibility.js` aligned with official criteria.
+Edit `server/catalog.js` to update the 20 maintained entries. Existing scheme IDs and MongoDB records are preserved. The API publishes maintained titles, summaries, and source URLs for those slugs. Keep the questions in `client/src/eligibilityContent.js` and the checks in `server/routes/eligibility.js` and `server/profileEligibility.js` aligned with official criteria.
 
 When updating user-facing text or maintained scheme content, update the corresponding translations in `client/src/locales/`. The original English, Hindi, and Kannada copies are in `client/src/i18n.jsx`, `client/src/eligibilityContent.js`, and `server/catalog.js`.
 
 Eligibility results explain whether the answers match the criteria checked by SchemeSathi. Users should confirm current rules with the official programme before applying. The housing check covers PMAY Urban 2.0. PM-JAY coverage for people below 70 requires checking the official beneficiary portal. The pension check covers old-age and widow pensions. The questionnaire directs disability pension applicants to verify applicable rules with their state office.
 
-Signed-in users can use **Find my schemes** to check multiple schemes in one submission. The app uses the same eligibility rules as individual checks. Unanswered criteria require verification, and questionnaire answers are not stored.
+Signed-in users can use **Find my schemes** to check ten schemes in one submission. Profile answers apply to each applicable check. Unanswered criteria require verification, and questionnaire answers are not stored. Catalog entries without a checker link to the official programme.
 
 The **Help chat** answers common questions about accounts, eligibility, and where to apply. Visitors can select a topic or type a supported scheme name. Messages are matched in the browser and cleared when the visitor leaves the page. The chat reads public scheme details and official links from SchemeSathi's catalog and requires no external AI service.
+
+### Import an authorized catalog
+
+Use an export that allows redistribution. In `server`, run `npm run import:catalog -- path/to/catalog.json` to validate the entire file. Add `--apply` to insert missing schemes into the configured MongoDB database. Imports preserve existing records and publish official links for verification.
+
+The JSON has a top-level `sourceUrl` for the dataset and a `schemes` array. Each scheme requires a unique `slug`, a `category` from `server/catalogFields.js`, a `level` of `central` or `state`, a `state` for state schemes, an official `sourceUrl`, a `title`, and a `summary`. Title and summary can be English strings or objects keyed by locale, with `en` required. Both URLs must use HTTPS. The importer accepts up to 20,000 schemes per file.

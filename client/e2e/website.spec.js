@@ -118,7 +118,7 @@ test('registration opens the match questionnaire', async ({ page }) => {
   await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user } }));
   await page.route('**/api/eligibility/matches', async (route) => {
     expect(route.request().headers().authorization).toBe('Bearer demo-token');
-    expect(route.request().postDataJSON()).toEqual({ answers: { citizen: 'yes' } });
+    expect(route.request().postDataJSON()).toEqual({ answers: {}, profile: { citizen: 'yes' } });
     await route.fulfill({ json: {
       results: [{
         slug: 'atal-pension-yojana',
@@ -126,6 +126,7 @@ test('registration opens the match questionnaire', async ({ page }) => {
         checks: [{ key: 'citizen', status: 'matched' }, { key: 'savings', status: 'unanswered' }],
         sourceUrl: 'https://pfrda.org.in/',
       }],
+      effectiveAnswers: { citizen: 'yes' },
     } });
   });
   await page.goto('/register');
@@ -134,8 +135,7 @@ test('registration opens the match questionnaire', async ({ page }) => {
   await page.getByLabel('Password', { exact: true }).fill('example-password');
   await page.getByRole('button', { name: 'Register', exact: true }).click();
   await expect(page).toHaveURL(/\/my-schemes$/);
-  await page.getByText('Atal Pension Yojana', { exact: true }).click();
-  await page.getByLabel('Are you an Indian citizen?').selectOption('yes');
+  await page.getByRole('region', { name: 'About you' }).getByLabel('Are you an Indian citizen?').selectOption('yes');
   await page.getByRole('button', { name: 'Show my matches' }).click();
   await expect(page.getByRole('heading', { name: 'Needs verification' })).toBeVisible();
 });
@@ -165,4 +165,17 @@ test('the homepage Help chat prompt opens the matching answer', async ({ page })
   await help.getByRole('link', { name: 'Where do I apply?' }).click();
   await expect(page).toHaveURL(/\/scheme-chat\?topic=apply$/);
   await expect(page.getByText('Open a scheme and follow its official link for application instructions.')).toBeVisible();
+});
+
+test('state filters retain national listings and show official verification for unverified schemes', async ({ page }) => {
+  const stateScheme = { ...scheme, _id: 'abc', slug: 'odisha-sample', title: { en: 'Odisha scheme' }, level: 'state', state: 'Odisha' };
+  const other = { ...stateScheme, _id: 'xyz', slug: 'karnataka-sample', title: { en: 'Karnataka scheme' }, state: 'Karnataka' };
+  await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme, stateScheme, other] }));
+  await page.route('**/api/schemes/abc', (route) => route.fulfill({ json: stateScheme }));
+  await page.goto('/schemes');
+  await page.getByLabel('All states and union territories', { exact: true }).selectOption('Odisha');
+  await expect(page.getByRole('link', { name: scheme.title.en })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Karnataka scheme' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Odisha scheme' }).click();
+  await expect(page.getByRole('link', { name: 'Check on the official portal' })).toHaveAttribute('href', scheme.sourceUrl);
 });

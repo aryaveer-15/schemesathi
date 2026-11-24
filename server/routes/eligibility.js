@@ -1,5 +1,7 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
+const catalog = require('../catalog');
+const { rules, validProfile, fromProfile, evaluateProfile, outcome } = require('../profileEligibility');
 
 const router = express.Router();
 
@@ -77,6 +79,7 @@ const schemes = {
 
 const supportedAnswers = new Set(['yes', 'no', 'unknown']);
 const profileQuestions = new Set(Object.values(schemes).flatMap(({ criteria }) => Object.keys(criteria)));
+const profileSchemes = catalog.filter(({ slug }) => Object.hasOwn(rules, slug));
 
 function validAnswers(answers, questions) {
   return answers && typeof answers === 'object' && !Array.isArray(answers)
@@ -90,20 +93,24 @@ function evaluate(answers, { criteria, sourceUrl, reviewCriteria = [] }) {
     if (answers[key] === 'unknown' || reviewCriteria.includes(key)) return { key, status: 'review' };
     return { key, status: 'unmatched' };
   });
-  let status = 'matched';
-  if (checks.some((check) => check.status !== 'matched')) status = 'review';
-  if (checks.some((check) => check.status === 'unmatched')) status = 'unmatched';
-  return { status, checks, sourceUrl };
+  return { status: outcome(checks), checks, sourceUrl };
 }
 
 router.post('/matches', requireAuth, (req, res) => {
   res.set('Cache-Control', 'no-store');
-  const { answers } = req.body ?? {};
-  if (!validAnswers(answers, profileQuestions) || Object.keys(answers).length === 0) {
+  const { answers = {}, profile = {} } = req.body ?? {};
+  if (!validAnswers(answers, profileQuestions) || !validProfile(profile)
+    || (Object.keys(answers).length === 0 && Object.keys(profile).length === 0)) {
     return res.status(400).json({ error: 'Provide at least one recognized answer' });
   }
-  const results = Object.entries(schemes).map(([slug, rule]) => ({ slug, ...evaluate(answers, rule) }));
-  res.json({ results });
+  const effectiveAnswers = { ...answers, ...fromProfile(profile) };
+  const results = Object.entries(schemes).map(([slug, rule]) => ({
+    slug, ...evaluate(effectiveAnswers, rule),
+  }));
+  for (const { slug, title, sourceUrl } of profileSchemes) {
+    results.push({ slug, title, sourceUrl, ...evaluateProfile(profile, rules[slug]) });
+  }
+  res.json({ results, effectiveAnswers });
 });
 
 router.get('/:slug', (req, res) => {

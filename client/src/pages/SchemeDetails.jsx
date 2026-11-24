@@ -15,6 +15,8 @@ function SchemeDetailsContent({ id }) {
   const [scheme, setScheme] = useState(null);
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
+  const hasForm = scheme && Object.hasOwn(schemeQuestions, scheme.slug);
+  const hasProfile = scheme?.eligibilityMode === 'profile';
 
   useEffect(() => {
     let active = true;
@@ -45,11 +47,14 @@ function SchemeDetailsContent({ id }) {
             {scheme.state && <span>{scheme.state === 'All India' ? t('allIndia') : scheme.state}</span>}
           </p>
           <p>{localizedScheme(scheme, 'summary', lang)}</p>
-          {Object.hasOwn(schemeQuestions, scheme.slug) && (
+          {hasForm && (
             <p><Link to={`/eligibility?scheme=${encodeURIComponent(scheme.slug)}`}>{t('eligibility')}</Link></p>
           )}
+          {hasProfile && <p><Link to="/my-schemes">{t('findSchemes')}</Link></p>}
           {/^(https?:\/\/)/i.test(scheme.sourceUrl ?? '') && (
-            <p><a href={scheme.sourceUrl} target="_blank" rel="noreferrer">{t('officialScheme')}</a></p>
+            <p><a href={scheme.sourceUrl} target="_blank" rel="noreferrer">
+              {t(hasForm || hasProfile ? 'officialScheme' : 'officialCheck')}
+            </a></p>
           )}
           <p className="disclaimer">{t('disclaimer')}</p>
         </article>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { LangContext } from './useLang';
 import { additionalText, languages } from './locales';
 import featureCopy from './locales/featureCopy';
+import catalogCopy from './locales/catalogCopy';
 
 const translations = {
   en: {
@@ -158,8 +159,8 @@ export function LangProvider({ children }) {
 
   const value = useMemo(() => {
     function t(key) {
-      return featureCopy[lang]?.[key] ?? additionalText(lang, key) ?? translations[lang]?.[key]
-        ?? featureCopy.en[key] ?? translations.en[key] ?? key;
+      return catalogCopy[lang]?.[key] ?? featureCopy[lang]?.[key] ?? additionalText(lang, key)
+        ?? translations[lang]?.[key] ?? catalogCopy.en[key] ?? featureCopy.en[key] ?? translations.en[key] ?? key;
     }
     return { lang, setLang, t };
   }, [lang]);

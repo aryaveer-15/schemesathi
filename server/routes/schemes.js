@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Scheme = require('../models/Scheme');
+const { rules } = require('../profileEligibility');
 const catalog = new Map(require('../catalog').map((scheme) => [scheme.slug, scheme]));
 
 const router = express.Router();
@@ -13,7 +14,9 @@ function publishedScheme(scheme) {
   const entry = catalog.get(scheme.slug);
   if (!entry) return scheme;
   const { title, summary, sourceUrl } = entry;
-  return { ...scheme, title, summary, sourceUrl };
+  const result = { ...scheme, title, summary, sourceUrl };
+  if (Object.hasOwn(rules, scheme.slug)) result.eligibilityMode = 'profile';
+  return result;
 }
 
 router.get('/', async (req, res, next) => {
@@ -22,6 +25,7 @@ router.get('/', async (req, res, next) => {
     if (typeof req.query.category === 'string' && req.query.category) {
       filter.category = req.query.category;
     }
+    if (typeof req.query.state === 'string' && req.query.state) filter.state = req.query.state;
     const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
     const match = new RegExp(escapeRegex(query), 'i');
     const schemes = (await Scheme.find(filter).lean()).map(publishedScheme)

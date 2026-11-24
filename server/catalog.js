@@ -57,4 +57,95 @@ const schemes = [
   },
 ];
 
-module.exports = schemes;
+const additions = [
+  {
+    slug: "pmjjby",
+    title: { en: "Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY)", hi: "प्रधानमंत्री जीवन ज्योति बीमा योजना", kn: "ಪ್ರಧಾನ ಮಂತ್ರಿ ಜೀವನ ಜ್ಯೋತಿ ಬಿಮಾ ಯೋಜನೆ" },
+    summary: { en: "Renewable life insurance through participating banks and post offices.", hi: "भाग लेने वाले बैंकों और डाकघरों के माध्यम से नवीकरणीय जीवन बीमा।", kn: "ಭಾಗವಹಿಸುವ ಬ್ಯಾಂಕ್ ಮತ್ತು ಅಂಚೆ ಕಚೇರಿಗಳ ಮೂಲಕ ನವೀಕರಿಸಬಹುದಾದ ಜೀವ ವಿಮೆ." },
+    category: "finance",
+    sourceUrl: "https://www.indiapost.gov.in/insurance-services/pmjjby",
+  },
+  {
+    slug: "pmsby",
+    title: { en: "Pradhan Mantri Suraksha Bima Yojana (PMSBY)", hi: "प्रधानमंत्री सुरक्षा बीमा योजना", kn: "ಪ್ರಧಾನ ಮಂತ್ರಿ ಸುರಕ್ಷಾ ಬಿಮಾ ಯೋಜನೆ" },
+    summary: { en: "Renewable cover for accidental death or disability through participating banks and post offices.", hi: "भाग लेने वाले बैंकों और डाकघरों के माध्यम से दुर्घटना में मृत्यु या दिव्यांगता के लिए नवीकरणीय बीमा।", kn: "ಭಾಗವಹಿಸುವ ಬ್ಯಾಂಕ್ ಮತ್ತು ಅಂಚೆ ಕಚೇರಿಗಳ ಮೂಲಕ ಅಪಘಾತ ಮರಣ ಅಥವಾ ಅಂಗವೈಕಲ್ಯಕ್ಕೆ ನವೀಕರಿಸಬಹುದಾದ ವಿಮೆ." },
+    category: "finance",
+    sourceUrl: "https://jansuraksha.gov.in/Files/PMSBY/ENGLISH/FAQ.pdf",
+  },
+  {
+    slug: "pmjdy",
+    title: { en: "Pradhan Mantri Jan Dhan Yojana (PMJDY)", hi: "प्रधानमंत्री जन धन योजना", kn: "ಪ್ರಧಾನ ಮಂತ್ರಿ ಜನ ಧನ್ ಯೋಜನೆ" },
+    summary: { en: "Financial inclusion programme that helps people access basic banking services.", hi: "बुनियादी बैंकिंग सेवाओं तक पहुँच देने वाला वित्तीय समावेशन कार्यक्रम।", kn: "ಮೂಲ ಬ್ಯಾಂಕಿಂಗ್ ಸೇವೆಗಳನ್ನು ಪಡೆಯಲು ನೆರವಾಗುವ ಹಣಕಾಸು ಒಳಗೊಳ್ಳುವಿಕೆ ಕಾರ್ಯಕ್ರಮ." },
+    category: "finance",
+    sourceUrl: "https://www.pmjdy.gov.in/",
+  },
+  {
+    slug: "pm-awas-gramin",
+    title: { en: "Pradhan Mantri Awas Yojana – Gramin", hi: "प्रधानमंत्री आवास योजना – ग्रामीण", kn: "ಪ್ರಧಾನ ಮಂತ್ರಿ ಆವಾಸ್ ಯೋಜನೆ – ಗ್ರಾಮೀಣ" },
+    summary: { en: "Housing assistance for eligible rural households to build a pucca home.", hi: "पात्र ग्रामीण परिवारों को पक्का घर बनाने के लिए आवास सहायता।", kn: "ಅರ್ಹ ಗ್ರಾಮೀಣ ಕುಟುಂಬಗಳಿಗೆ ಪಕ್ಕಾ ಮನೆ ನಿರ್ಮಿಸಲು ವಸತಿ ನೆರವು." },
+    category: "housing",
+    sourceUrl: "https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2152589&lang=2&reg=48",
+  },
+  {
+    slug: "pm-surya-ghar",
+    title: { en: "PM Surya Ghar: Muft Bijli Yojana", hi: "पीएम सूर्य घर: मुफ्त बिजली योजना", kn: "ಪಿಎಂ ಸೂರ್ಯ ಘರ್: ಉಚಿತ ವಿದ್ಯುತ್ ಯೋಜನೆ" },
+    summary: { en: "Support for eligible households to install rooftop solar systems.", hi: "पात्र परिवारों को छत पर सौर ऊर्जा प्रणाली लगाने में सहायता।", kn: "ಅರ್ಹ ಕುಟುಂಬಗಳಿಗೆ ಮೇಲ್ಛಾವಣಿ ಸೌರ ವ್ಯವಸ್ಥೆ ಅಳವಡಿಸಲು ನೆರವು." },
+    category: "energy",
+    sourceUrl: "https://pmsuryaghar.gov.in/",
+  },
+  {
+    slug: "pm-vishwakarma",
+    title: { en: "PM Vishwakarma", hi: "पीएम विश्वकर्मा", kn: "ಪಿಎಂ ವಿಶ್ವಕರ್ಮ" },
+    summary: { en: "Skills, tools, and business support for eligible artisans and craftspeople in specified traditional trades.", hi: "चुनिंदा पारंपरिक व्यवसायों में पात्र कारीगरों को कौशल, औज़ार और कारोबार में सहायता।", kn: "ನಿಗದಿತ ಸಾಂಪ್ರದಾಯಿಕ ವೃತ್ತಿಗಳ ಅರ್ಹ ಕುಶಲಕರ್ಮಿಗಳಿಗೆ ಕೌಶಲ್ಯ, ಉಪಕರಣ ಮತ್ತು ಉದ್ಯಮ ನೆರವು." },
+    category: "employment",
+    sourceUrl: "https://pmvishwakarma.gov.in/",
+  },
+  {
+    slug: "pm-svanidhi",
+    title: { en: "PM Street Vendor’s AtmaNirbhar Nidhi (PM SVANidhi)", hi: "पीएम स्ट्रीट वेंडर्स आत्मनिर्भर निधि (पीएम स्वनिधि)", kn: "ಪಿಎಂ ಬೀದಿ ವ್ಯಾಪಾರಿಗಳ ಆತ್ಮನಿರ್ಭರ ನಿಧಿ (ಪಿಎಂ ಸ್ವನಿಧಿ)" },
+    summary: { en: "Working-capital credit and related support for eligible street vendors.", hi: "पात्र रेहड़ी-पटरी विक्रेताओं के लिए कार्यशील पूँजी ऋण और संबंधित सहायता।", kn: "ಅರ್ಹ ಬೀದಿ ವ್ಯಾಪಾರಿಗಳಿಗೆ ಕಾರ್ಯನಿರತ ಬಂಡವಾಳ ಸಾಲ ಮತ್ತು ಸಂಬಂಧಿತ ನೆರವು." },
+    category: "employment",
+    sourceUrl: "https://pmsvanidhi.mohua.gov.in/",
+  },
+  {
+    slug: "pm-fasal-bima",
+    title: { en: "Pradhan Mantri Fasal Bima Yojana (PMFBY)", hi: "प्रधानमंत्री फसल बीमा योजना", kn: "ಪ್ರಧಾನ ಮಂತ್ರಿ ಫಸಲ್ ಬಿಮಾ ಯೋಜನೆ" },
+    summary: { en: "Crop insurance for notified crops and areas, subject to seasonal enrolment rules.", hi: "अधिसूचित फसलों और क्षेत्रों के लिए मौसमी नामांकन नियमों के अधीन फसल बीमा।", kn: "ಹಂಗಾಮಿನ ನೋಂದಣಿ ನಿಯಮಗಳಿಗೆ ಒಳಪಟ್ಟು ಅಧಿಸೂಚಿತ ಬೆಳೆಗಳು ಮತ್ತು ಪ್ರದೇಶಗಳಿಗೆ ಬೆಳೆ ವಿಮೆ." },
+    category: "agriculture",
+    sourceUrl: "https://pmfby.gov.in/",
+  },
+  {
+    slug: "pm-matru-vandana",
+    title: { en: "Pradhan Mantri Matru Vandana Yojana (PMMVY)", hi: "प्रधानमंत्री मातृ वंदना योजना", kn: "ಪ್ರಧಾನ ಮಂತ್ರಿ ಮಾತೃ ವಂದನಾ ಯೋಜನೆ" },
+    summary: { en: "Maternity benefits for eligible pregnant women and nursing mothers.", hi: "पात्र गर्भवती और स्तनपान कराने वाली महिलाओं के लिए मातृत्व लाभ।", kn: "ಅರ್ಹ ಗರ್ಭಿಣಿಯರು ಮತ್ತು ಹಾಲುಣಿಸುವ ತಾಯಂದಿರಿಗೆ ಮಾತೃತ್ವ ಸೌಲಭ್ಯಗಳು." },
+    category: "women",
+    sourceUrl: "https://wcd.gov.in/women/pradhan-mantri-matru-vandana-yojna",
+  },
+  {
+    slug: "national-means-merit-scholarship",
+    title: { en: "National Means-cum-Merit Scholarship Scheme (NMMSS)", hi: "राष्ट्रीय साधन-सह-मेधा छात्रवृत्ति योजना", kn: "ರಾಷ್ಟ್ರೀಯ ಆರ್ಥಿಕ ಸ್ಥಿತಿ ಮತ್ತು ಪ್ರತಿಭಾ ವಿದ್ಯಾರ್ಥಿವೇತನ ಯೋಜನೆ" },
+    summary: { en: "Scholarships to help selected students from lower-income households continue secondary school. Check the current application window on NSP.", hi: "कम आय वाले परिवारों के चयनित विद्यार्थियों की माध्यमिक पढ़ाई जारी रखने में सहायता। मौजूदा आवेदन अवधि एनएसपी पर देखें।", kn: "ಕಡಿಮೆ ಆದಾಯದ ಕುಟುಂಬಗಳ ಆಯ್ಕೆಯಾದ ವಿದ್ಯಾರ್ಥಿಗಳಿಗೆ ಪ್ರೌಢಶಿಕ್ಷಣ ಮುಂದುವರಿಸಲು ವಿದ್ಯಾರ್ಥಿವೇತನ. ಪ್ರಸ್ತುತ ಅರ್ಜಿ ಅವಧಿಯನ್ನು ಎನ್‌ಎಸ್‌ಪಿಯಲ್ಲಿ ಪರಿಶೀಲಿಸಿ." },
+    category: "education",
+    sourceUrl: "https://scholarships.gov.in/All-Scholarships",
+  },
+  {
+    slug: "odisha-subhadra",
+    title: { en: "SUBHADRA – Odisha", hi: "सुभद्रा – ओडिशा", kn: "ಸುಭದ್ರಾ – ಒಡಿಶಾ" },
+    summary: { en: "Direct financial assistance for eligible women in Odisha.", hi: "ओडिशा की पात्र महिलाओं के लिए प्रत्यक्ष आर्थिक सहायता।", kn: "ಒಡಿಶಾದ ಅರ್ಹ ಮಹಿಳೆಯರಿಗೆ ನೇರ ಆರ್ಥಿಕ ನೆರವು." },
+    category: "women",
+    sourceUrl: "https://wcd.odisha.gov.in/en/node/184943",
+    level: 'state',
+    state: "Odisha",
+  },
+  {
+    slug: 'karnataka-cmkky',
+    title: { en: 'Chief Minister’s Kaushalya Karnataka Yojane', hi: 'मुख्यमंत्री कौशल्य कर्नाटक योजना', kn: 'ಮುಖ್ಯಮಂತ್ರಿಗಳ ಕೌಶಲ್ಯ ಕರ್ನಾಟಕ ಯೋಜನೆ' },
+    summary: { en: 'Karnataka’s skill-development scheme. The state portal publishes its training guidelines.', hi: 'कर्नाटक की कौशल विकास योजना। प्रशिक्षण दिशानिर्देश राज्य पोर्टल पर उपलब्ध हैं।', kn: 'ಕರ್ನಾಟಕದ ಕೌಶಲ್ಯಾಭಿವೃದ್ಧಿ ಯೋಜನೆ. ತರಬೇತಿ ಮಾರ್ಗಸೂಚಿಗಳು ರಾಜ್ಯ ಪೋರ್ಟಲ್‌ನಲ್ಲಿ ಲಭ್ಯವಿವೆ.' },
+    category: 'employment',
+    sourceUrl: 'https://yuvaudyogasethu.karnataka.gov.in/cmkky-guidelines',
+    level: 'state',
+    state: "Karnataka",
+  },
+];
+
+module.exports = [...schemes, ...additions];
