@@ -1,0 +1,130 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from '../api';
+import { schemeQuestions, schemeTitle } from '../eligibilityContent';
+import { helpReply } from '../helpTopics';
+import { localizedScheme } from '../schemeText';
+import { useAuth } from '../useAuth';
+import { useLang } from '../useLang';
+
+const topics = [
+  { key: 'eligibility', label: 'eligibility' },
+  { key: 'apply', label: 'helpApply' },
+  { key: 'account', label: 'register' },
+];
+
+const replies = {
+  eligibility: { text: 'helpEligibilityAnswer', links: [['/my-schemes', 'findSchemes'], ['/eligibility', 'eligibility']] },
+  apply: { text: 'helpApplyAnswer', links: [['/schemes', 'browse']] },
+  account: { text: 'helpAccountAnswer', links: [['/register', 'register'], ['/login', 'login']] },
+  fallback: { text: 'helpFallback', links: [] },
+};
+
+export default function SchemeChat() {
+  const { lang, t } = useLang();
+  const { user } = useAuth();
+  const [catalog, setCatalog] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [question, setQuestion] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    api('/api/schemes').then((schemes) => {
+      if (active && Array.isArray(schemes)) setCatalog(schemes);
+    }).catch(() => {
+      // General help and eligibility links stay available during a catalog outage.
+    });
+    return () => { active = false; };
+  }, []);
+
+  function addReply(message, reply) {
+    setMessages((current) => [...current.slice(-7), { message, reply }]);
+    setQuestion('');
+  }
+
+  function sendQuestion(event) {
+    event.preventDefault();
+    const message = question.trim();
+    if (message) addReply(message, helpReply(message, t));
+  }
+
+  return (
+    <main className="page">
+      <h1>{t('schemeChat')}</h1>
+      <p>{t('chatIntro')}</p>
+      <div className="eligibility-form" aria-live="polite">
+        {messages.map(({ message, reply }, index) => (
+          <div className="chat-turn" key={index}>
+            <article className="card chat-message" dir="auto">
+              <strong>{t('chatQuestion')}</strong>
+              <p>{message}</p>
+            </article>
+            <article className="card chat-message">
+              <strong>{t('schemeChat')}</strong>
+              {reply.schemes
+                ? reply.schemes.map((slug) => (
+                  <SchemeReply key={slug} slug={slug} scheme={catalog.find((entry) => entry.slug === slug)} />
+                ))
+                : <TopicReply reply={replies[reply.topic]} />}
+            </article>
+          </div>
+        ))}
+      </div>
+      <div className="chat-topics">
+        {topics.map(({ key, label }) => (
+          <button type="button" key={key} className="secondary-action"
+            onClick={() => addReply(t(label), { topic: key })}>{t(label)}</button>
+        ))}
+      </div>
+      <details className="card eligibility-form match-section">
+        <summary>{t('schemes')}</summary>
+        <div className="chat-topics">
+          {Object.keys(schemeQuestions).map((slug) => (
+            <button type="button" className="secondary-action" key={slug}
+              onClick={() => addReply(schemeTitle(lang, slug), { schemes: [slug] })}>{schemeTitle(lang, slug)}</button>
+          ))}
+        </div>
+      </details>
+      <form className="form eligibility-form chat-form" onSubmit={sendQuestion}>
+        <label>
+          {t('chatQuestion')}
+          <textarea dir="auto" rows={3} maxLength={240} value={question}
+            onChange={(event) => setQuestion(event.target.value)} />
+        </label>
+        <button type="submit" disabled={!question.trim()}>{t('chatSend')}</button>
+      </form>
+      {user && <p><Link to="/my-schemes">{t('findSchemes')}</Link></p>}
+    </main>
+  );
+}
+
+function TopicReply({ reply }) {
+  const { t } = useLang();
+  return (
+    <>
+      <p>{t(reply.text)}</p>
+      {reply.links.length > 0 && <ul>{reply.links.map(([path, key]) => (
+        <li key={path}><Link to={path}>{t(key)}</Link></li>
+      ))}</ul>}
+    </>
+  );
+}
+
+function SchemeReply({ scheme, slug }) {
+  const { lang, t } = useLang();
+  return (
+    <section>
+      <h2>{schemeTitle(lang, slug)}</h2>
+      {scheme && <p>{localizedScheme(scheme, 'summary', lang)}</p>}
+      <ul>
+        <li><Link to={`/eligibility?scheme=${encodeURIComponent(slug)}`}>{t('eligibility')}</Link></li>
+        {scheme && /^https:\/\//i.test(scheme.sourceUrl) && (
+          <li><a href={scheme.sourceUrl} target="_blank" rel="noreferrer">{t('officialScheme')}</a></li>
+        )}
+        <li><Link to={scheme?._id ? `/schemes/${scheme._id}` : '/schemes'}>
+          {scheme?._id ? localizedScheme(scheme, 'title', lang) : t('browse')}
+        </Link></li>
+      </ul>
+    </section>
+  );
+}

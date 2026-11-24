@@ -1,19 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
-import { copy, schemeQuestions } from '../eligibilityContent';
+import { eligibilityText, schemeQuestions, schemeScope, schemeTitle } from '../eligibilityContent';
 import { useLang } from '../useLang';
-import { additionalText } from '../locales';
-import { translatedScheme } from '../schemeText';
 
 const schemeOptions = Object.entries(schemeQuestions);
-const languageIndex = { en: 0, hi: 1, kn: 2 };
 const answerOptions = ['yes', 'no', 'unknown'];
-const scopeKeys = {
-  'pm-awas-yojana': 'housingScope',
-  'ayushman-bharat-pmjay': 'healthScope',
-  'nsap-pension': 'pensionScope',
-};
 
 export default function Eligibility() {
   const [params] = useSearchParams();
@@ -34,8 +26,8 @@ function EligibilityForm({ initialSlug }) {
   const { questions } = schemeQuestions[slug];
   const missing = Object.keys(questions).find((key) => !answers[key]);
   const missingId = missing && `answer-${missing}`;
-  const local = (key, values = copy[key]) => additionalText(lang, key)
-    ?? values[languageIndex[lang]] ?? values[0];
+  const local = (key, values) => eligibilityText(lang, key, values);
+  const scope = schemeScope(lang, slug);
 
   useEffect(() => {
     let active = true;
@@ -88,14 +80,14 @@ function EligibilityForm({ initialSlug }) {
               setShowMissing(false);
               clearFeedback();
             }}>
-              {schemeOptions.map(([value, scheme]) => (
+              {schemeOptions.map(([value]) => (
                 <option key={value} value={value}>
-                  {translatedScheme(value, 'title', lang) ?? local('title', scheme.title)}
+                  {schemeTitle(lang, value)}
                 </option>
               ))}
             </select>
           </label>
-          {copy.scope[slug] && <p className="status">{local(scopeKeys[slug], copy.scope[slug])}</p>}
+          {scope && <p className="status">{scope}</p>}
           {source?.slug === slug && (
             <a href={source.sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a>
           )}

@@ -24,7 +24,7 @@ export default function Register() {
         body: { name, email, password },
       });
       signIn(data);
-      navigate('/schemes');
+      navigate('/my-schemes');
     } catch (err) {
       const messages = { 409: 'emailInUse', 429: 'rateLimited' };
       setError(messages[err.status] ?? 'registerFailed');

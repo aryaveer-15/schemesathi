@@ -1,4 +1,4 @@
-import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { useAuth } from './useAuth';
 import { useLang } from './useLang';
 import { languages } from './locales';
@@ -8,10 +8,12 @@ import Schemes from './pages/Schemes';
 import Eligibility from './pages/Eligibility';
 import SchemeDetails from './pages/SchemeDetails';
 import Home from './pages/Home';
+import FindSchemes from './pages/FindSchemes';
+import SchemeChat from './pages/SchemeChat';
 
 export default function App() {
   const { t, lang, setLang } = useLang();
-  const { user, signOut } = useAuth();
+  const { user, token, signOut } = useAuth();
 
   return (
     <div className="app">
@@ -23,6 +25,8 @@ export default function App() {
         <nav className="nav">
           <NavLink to="/schemes">{t('schemes')}</NavLink>
           <NavLink to="/eligibility">{t('eligibility')}</NavLink>
+          <NavLink to="/my-schemes">{t('findSchemes')}</NavLink>
+          <NavLink to="/scheme-chat">{t('schemeChat')}</NavLink>
           {user ? (
             <>
               <span className="greeting">{t('hello')}, <bdi>{user.name}</bdi></span>
@@ -55,6 +59,8 @@ export default function App() {
         <Route path="/schemes" element={<Schemes />} />
         <Route path="/schemes/:id" element={<SchemeDetails />} />
         <Route path="/eligibility" element={<Eligibility />} />
+        <Route path="/my-schemes" element={token ? <FindSchemes /> : <Navigate to="/login" replace />} />
+        <Route path="/scheme-chat" element={<SchemeChat />} />
         <Route path="*" element={<main className="page">
           <h1>{t('pageMissing')}</h1>
           <Link to="/">{t('home')}</Link>

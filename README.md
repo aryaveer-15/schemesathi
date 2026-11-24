@@ -36,3 +36,7 @@ Edit `server/catalog.js` to update the eight maintained entries. Existing scheme
 When updating user-facing text or maintained scheme content, update the corresponding translations in `client/src/locales/`. The original English, Hindi, and Kannada copies are in `client/src/i18n.jsx`, `client/src/eligibilityContent.js`, and `server/catalog.js`.
 
 Eligibility results explain whether the answers match the criteria checked by SchemeSathi. Users should confirm current rules with the official programme before applying. The housing check covers PMAY Urban 2.0. PM-JAY coverage for people below 70 requires checking the official beneficiary portal. The pension check covers old-age and widow pensions. The questionnaire directs disability pension applicants to verify applicable rules with their state office.
+
+Signed-in users can use **Find my schemes** to check multiple schemes in one submission. The app uses the same eligibility rules as individual checks. Unanswered criteria require verification, and questionnaire answers are not stored.
+
+The **Help chat** answers common questions about accounts, eligibility, and where to apply. Visitors can select a topic or type a supported scheme name. Messages are matched in the browser and cleared when the visitor leaves the page. The chat reads public scheme details and official links from SchemeSathi's catalog and requires no external AI service.

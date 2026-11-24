@@ -10,8 +10,8 @@ export default function Home() {
         <h1>{t('homeTitle')}</h1>
         <p>{t('homeIntro')}</p>
         <div className="home-actions">
-          <Link className="primary-action" to="/schemes">{t('browse')}</Link>
-          <Link className="secondary-action" to="/eligibility">{t('eligibility')}</Link>
+          <Link className="primary-action" to="/my-schemes">{t('findSchemes')}</Link>
+          <Link className="secondary-action" to="/schemes">{t('browse')}</Link>
         </div>
       </section>
     </main>

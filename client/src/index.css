@@ -249,6 +249,59 @@ select {
   margin: 0;
 }
 
+.match-section + .match-section,
+.chat-message + .chat-message {
+  margin-top: 0.5rem;
+}
+
+.form .match-section + .match-section {
+  margin-top: 0;
+}
+
+.match-section summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.match-section label,
+.match-section .status {
+  margin-top: 0.75rem;
+}
+
+.chat-message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-turn + .chat-turn,
+.chat-form {
+  margin-block-start: 1rem;
+}
+
+.chat-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+
+.chat-topics button {
+  color: var(--accent);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.form textarea {
+  inline-size: 100%;
+  padding: 0.65rem;
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
 .eligibility-result {
   margin-top: 1rem;
 }

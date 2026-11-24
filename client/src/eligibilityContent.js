@@ -1,3 +1,6 @@
+import { additionalText } from './locales/index.js';
+import { translatedScheme } from './schemeText.js';
+
 export const schemeQuestions = {
   'atal-pension-yojana': {
     title: ['Atal Pension Yojana', 'अटल पेंशन योजना', 'ಅಟಲ್ ಪಿಂಚಣಿ ಯೋಜನೆ'],
@@ -195,3 +198,23 @@ export const copy = {
     'ಅವಳಿ ಅಥವಾ ಬಹುಜನನಗಳಿಗೆ ವಿನಾಯಿತಿಗಳು ಅನ್ವಯಿಸಬಹುದು. ಖಾತೆ ಒದಗಿಸುವವರೊಂದಿಗೆ ಅಧಿಕೃತ ನಿಯಮಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.',
   ],
 };
+
+const languageIndex = { en: 0, hi: 1, kn: 2 };
+const scopeKeys = {
+  'pm-awas-yojana': 'housingScope',
+  'ayushman-bharat-pmjay': 'healthScope',
+  'nsap-pension': 'pensionScope',
+};
+
+export function eligibilityText(lang, key, values = copy[key]) {
+  return additionalText(lang, key) ?? values[languageIndex[lang]] ?? values[0];
+}
+
+export function schemeTitle(lang, slug) {
+  return translatedScheme(slug, 'title', lang) ?? eligibilityText(lang, 'title', schemeQuestions[slug].title);
+}
+
+export function schemeScope(lang, slug) {
+  const key = scopeKeys[slug];
+  return key ? eligibilityText(lang, key, copy.scope[slug]) : '';
+}

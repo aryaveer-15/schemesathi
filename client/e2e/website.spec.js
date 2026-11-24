@@ -111,3 +111,48 @@ test('all added languages translate the site, catalog, and eligibility forms', a
   await expect(page.getByRole('alert')).toHaveText(additionalTranslations.ur.answerRequired);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
 });
+
+test('registration opens the match questionnaire', async ({ page }) => {
+  const user = { name: 'Demo Resident' };
+  await page.route('**/api/auth/register', (route) => route.fulfill({ status: 201, json: { token: 'demo-token', user } }));
+  await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user } }));
+  await page.route('**/api/eligibility/matches', async (route) => {
+    expect(route.request().headers().authorization).toBe('Bearer demo-token');
+    expect(route.request().postDataJSON()).toEqual({ answers: { citizen: 'yes' } });
+    await route.fulfill({ json: {
+      results: [{
+        slug: 'atal-pension-yojana',
+        status: 'review',
+        checks: [{ key: 'citizen', status: 'matched' }, { key: 'savings', status: 'unanswered' }],
+        sourceUrl: 'https://pfrda.org.in/',
+      }],
+    } });
+  });
+  await page.goto('/register');
+  await page.getByLabel('Name', { exact: true }).fill(user.name);
+  await page.getByLabel('Email', { exact: true }).fill('test@example.test');
+  await page.getByLabel('Password', { exact: true }).fill('example-password');
+  await page.getByRole('button', { name: 'Register', exact: true }).click();
+  await expect(page).toHaveURL(/\/my-schemes$/);
+  await page.getByText('Atal Pension Yojana', { exact: true }).click();
+  await page.getByLabel('Are you an Indian citizen?').selectOption('yes');
+  await page.getByRole('button', { name: 'Show my matches' }).click();
+  await expect(page.getByRole('heading', { name: 'Needs verification' })).toBeVisible();
+});
+
+test('guest help chat shows official scheme links without sending chat messages', async ({ page }) => {
+  const network = [];
+  page.on('request', (request) => network.push([request.method(), new URL(request.url()).pathname]));
+  await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme] }));
+  await page.goto('/scheme-chat');
+  await expect(page.getByRole('heading', { name: 'Help chat' })).toBeVisible();
+  await page.getByRole('button', { name: 'Where do I apply?' }).click();
+  await expect(page.getByRole('link', { name: 'Browse schemes' })).toBeVisible();
+  await page.getByLabel('Your question', { exact: true }).fill('Where do I apply for PMUY?');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Visit the official scheme website' })).toHaveAttribute('href', scheme.sourceUrl);
+  await page.getByLabel('Your question', { exact: true }).fill('Something unrelated');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByText('Choose a topic below or type one of the listed scheme names.')).toBeVisible();
+  expect(network.filter(([method, path]) => method !== 'GET' || path.startsWith('/api/chat'))).toEqual([]);
+});

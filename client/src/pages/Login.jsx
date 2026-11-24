@@ -23,7 +23,7 @@ export default function Login() {
         body: { email, password },
       });
       signIn(data);
-      navigate('/schemes');
+      navigate('/my-schemes');
     } catch (err) {
       const messages = { 401: 'invalidLogin', 429: 'rateLimited' };
       setError(messages[err.status] ?? 'loginFailed');
