@@ -35,7 +35,7 @@ test('one authenticated questionnaire returns matches, exclusions and missing de
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   const { results } = await response.json();
-  assert.equal(results.length, 14);
+  assert.equal(results.length, 21);
   const bySlug = Object.fromEntries(results.map((result) => [result.slug, result]));
   assert.equal(bySlug['atal-pension-yojana'].status, 'matched');
   assert.match(bySlug['atal-pension-yojana'].application.visit, /bank or post office/);
@@ -105,4 +105,35 @@ test('Jan-Dhan and both Maandhan schemes evaluate shared age and give enrolment 
   assert.equal(exclusions['pm-kisan-maandhan'].application, undefined);
   assert.equal((await resultsFor({ age: 16, bankAccount: 'no' })).pmjdy.status, 'review');
   assert.equal((await resultsFor({ ...profile, age: 41 }))['pm-kisan-maandhan'].status, 'unmatched');
+});
+
+test('the seven new checks give next steps only when the stated requirements match', async () => {
+  const profile = {
+    age: 29, citizen: 'yes', traderWork: 'yes', traderTurnover: 'yes', traderExclusion: 'no',
+    minorAge: 12, vatsalyaGuardian: 'yes', vatsalyaCitizenship: 'yes', schoolScreening: 'yes',
+    jsskCare: 'yes', publicFacility: 'yes',
+    csssMerit: 'yes', csssCourse: 'yes', csssIncome: 'yes', csssOtherAid: 'no',
+    aicteCourse: 'yes', aicteIncome: 'yes', aicteOtherAid: 'no',
+    pragatiStudent: 'yes', pragatiFamily: 'yes', sakshamDisability: 'yes',
+  };
+  async function resultsFor(details) {
+    const response = await post('/eligibility/matches', { profile: details });
+    assert.equal(response.status, 200);
+    return Object.fromEntries((await response.json()).results.map((result) => [result.slug, result]));
+  }
+  const matches = await resultsFor(profile);
+  for (const slug of ['nps-traders', 'nps-vatsalya', 'rashtriya-bal-swasthya', 'janani-shishu-suraksha',
+    'pm-usp-college-scholarship', 'aicte-pragati', 'aicte-saksham']) {
+    assert.equal(matches[slug].status, 'matched', slug);
+    assert.ok(matches[slug].application?.online || matches[slug].application?.visit, slug);
+  }
+  const changed = await resultsFor({ ...profile, minorAge: 18, publicFacility: 'unknown', aicteIncome: 'no' });
+  assert.equal(changed['nps-vatsalya'].status, 'unmatched');
+  assert.equal(changed['rashtriya-bal-swasthya'].status, 'review');
+  assert.equal(changed['janani-shishu-suraksha'].status, 'review');
+  assert.equal(changed['janani-shishu-suraksha'].application, undefined);
+  assert.equal(changed['aicte-pragati'].status, 'unmatched');
+  assert.equal(changed['aicte-saksham'].status, 'unmatched');
+  assert.equal((await resultsFor({ minorAge: 2 }))['rashtriya-bal-swasthya'].status, 'matched');
+  assert.equal((await resultsFor({ schoolScreening: 'yes' }))['rashtriya-bal-swasthya'].status, 'review');
 });

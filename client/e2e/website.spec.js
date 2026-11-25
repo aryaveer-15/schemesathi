@@ -127,7 +127,7 @@ test('registration opens the match questionnaire', async ({ page }) => {
     expect(route.request().headers().authorization).toBe('Bearer demo-token');
     expect(route.request().postDataJSON()).toEqual({
       answers: {},
-      profile: { citizen: 'yes', solarConnection: 'yes' },
+      profile: { citizen: 'yes', solarConnection: 'yes', minorAge: 12 },
     });
     await route.fulfill({ json: {
       results: [{
@@ -161,6 +161,8 @@ test('registration opens the match questionnaire', async ({ page }) => {
   await page.getByRole('region', { name: 'About you' }).getByLabel('Are you an Indian citizen?').selectOption('yes');
   await page.getByText('PM Surya Ghar rooftop solar', { exact: true }).click();
   await page.getByLabel('Does the home have a residential grid connection with the local electricity distributor?').selectOption('yes');
+  await page.getByText('NPS Vatsalya and child health screening', { exact: true }).click();
+  await page.getByLabel('Age of the child being checked, in completed years').fill('12');
   await page.getByRole('button', { name: 'Show my matches' }).click();
   await expect(page.getByRole('heading', { name: 'Needs verification' })).toBeVisible();
   await expect(page.getByText('Ask your participating bank or post office for the enrolment form.')).toBeVisible();

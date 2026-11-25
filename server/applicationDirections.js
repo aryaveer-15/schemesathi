@@ -49,4 +49,28 @@ module.exports = {
   'pm-kisan-maandhan': {
     visit: 'Visit a Common Service Centre and ask to enrol in PM-KMY. Bring your Aadhaar, bank account details and mobile phone. Ask the operator how your state verifies land records.',
   },
+  'nps-traders': {
+    visit: 'Visit a Common Service Centre and ask for the pension scheme for traders and self-employed persons. Bring your Aadhaar and savings or Jan-Dhan account details.',
+  },
+  'nps-vatsalya': {
+    visit: 'A parent or legal guardian can visit a PFRDA-registered NPS Point of Presence, such as a participating bank or India Post branch. Ask for NPS Vatsalya and bring proof of the child’s age and the guardian’s identity and address.',
+  },
+  'rashtriya-bal-swasthya': {
+    visit: 'Ask the delivery facility about newborn screening. For older children, ask the local ASHA worker, Anganwadi or government school when the screening team visits and how to get a referral.',
+  },
+  'janani-shishu-suraksha': {
+    visit: 'Contact your local ASHA worker or public health facility for JSSK services and referral or transport arrangements. Ask the facility which services are covered.',
+  },
+  'pm-usp-college-scholarship': {
+    url: 'https://scholarships.gov.in/All-Scholarships',
+    online: 'Find PM-USP CSSS on the National Scholarship Portal. Check the current fresh application window, complete One Time Registration as required and ask your institution to verify the application.',
+  },
+  'aicte-pragati': {
+    url: 'https://scholarships.gov.in/All-Scholarships',
+    online: 'Choose AICTE Pragati and the degree or diploma option on the National Scholarship Portal. Check the fresh application deadline and ask your institution to verify your submission.',
+  },
+  'aicte-saksham': {
+    url: 'https://scholarships.gov.in/All-Scholarships',
+    online: 'Choose AICTE Saksham and the degree or diploma option on the National Scholarship Portal. Check the application window and keep your disability and family income certificates ready for verification.',
+  },
 };

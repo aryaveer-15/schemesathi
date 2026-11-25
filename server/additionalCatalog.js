@@ -74,7 +74,7 @@ const entries = [
     title: 'Rashtriya Bal Swasthya Karyakram (RBSK)',
     summary: 'Child health screening and referral for birth defects, deficiencies, disease and developmental delays.',
     requirements: ['The programme serves children from birth through age 18. The screening route varies by age and may be through a facility, Anganwadi or covered school.'],
-    sourceUrl: 'https://rbsk.mohfw.gov.in/RBSK/UI/Screening.aspx',
+    sourceUrl: 'https://nhm.gov.in/index1.php?lang=1&level=0&lid=773&linkid=499',
   },
   {
     slug: 'pm-national-dialysis', category: 'health',

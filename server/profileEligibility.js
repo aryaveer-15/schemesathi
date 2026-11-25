@@ -1,4 +1,5 @@
 const options = ['yes', 'no', 'unknown'];
+const yesNo = (value) => options.includes(value);
 
 function wholeNumber(value, min, max) {
   return Number.isSafeInteger(value) && value >= min && value <= max;
@@ -20,6 +21,31 @@ const fields = {
   workerExclusion: (value) => options.includes(value),
   smallFarmRecord: (value) => options.includes(value),
   farmerPensionExclusion: (value) => options.includes(value),
+  traderWork: yesNo,
+  traderTurnover: yesNo,
+  traderExclusion: yesNo,
+  minorAge: (value) => wholeNumber(value, 0, 120),
+  vatsalyaGuardian: yesNo,
+  vatsalyaCitizenship: yesNo,
+  schoolScreening: yesNo,
+  jsskCare: yesNo,
+  publicFacility: yesNo,
+  csssMerit: yesNo,
+  csssCourse: yesNo,
+  csssIncome: yesNo,
+  csssOtherAid: yesNo,
+  aicteCourse: yesNo,
+  aicteIncome: yesNo,
+  aicteOtherAid: yesNo,
+  pragatiStudent: yesNo,
+  pragatiFamily: yesNo,
+  sakshamDisability: yesNo,
+};
+
+const freshTechnicalScholarship = {
+  aicteCourse: { equals: 'yes' },
+  aicteIncome: { equals: 'yes' },
+  aicteOtherAid: { equals: 'no' },
 };
 
 const rules = {
@@ -53,6 +79,41 @@ const rules = {
     age: { min: 18, max: 40 },
     smallFarmRecord: { equals: 'yes' },
     farmerPensionExclusion: { equals: 'no' },
+  },
+  'nps-traders': {
+    age: { min: 18, max: 40 },
+    citizen: { equals: 'yes' },
+    traderWork: { equals: 'yes' },
+    traderTurnover: { equals: 'yes' },
+    traderExclusion: { equals: 'no' },
+  },
+  'nps-vatsalya': {
+    minorAge: { min: 0, max: 17 },
+    vatsalyaGuardian: { equals: 'yes' },
+    vatsalyaCitizenship: { equals: 'yes' },
+  },
+  'rashtriya-bal-swasthya': {
+    minorAge: { min: 0, max: 18, reviewFrom: 18 },
+    schoolScreening: { equals: 'yes', reviewWhenDifferent: true, skipBelowAge: 6 },
+  },
+  'janani-shishu-suraksha': {
+    jsskCare: { equals: 'yes' },
+    publicFacility: { equals: 'yes', reviewWhenDifferent: true },
+  },
+  'pm-usp-college-scholarship': {
+    csssMerit: { equals: 'yes' },
+    csssCourse: { equals: 'yes' },
+    csssIncome: { equals: 'yes' },
+    csssOtherAid: { equals: 'no' },
+  },
+  'aicte-pragati': {
+    ...freshTechnicalScholarship,
+    pragatiStudent: { equals: 'yes' },
+    pragatiFamily: { equals: 'yes' },
+  },
+  'aicte-saksham': {
+    ...freshTechnicalScholarship,
+    sakshamDisability: { equals: 'yes' },
   },
 };
 
@@ -95,10 +156,12 @@ function outcome(checks) {
 }
 
 function evaluateProfile(profile, criteria) {
-  const checks = Object.entries(criteria).map(([key, rule]) => ({
-    key, status: checkField(profile, key, rule),
-    ...(key === 'age' && rule.max !== undefined && { range: [rule.min, rule.max] }),
-  }));
+  const checks = Object.entries(criteria)
+    .filter(([, rule]) => rule.skipBelowAge === undefined || (profile.minorAge ?? Infinity) >= rule.skipBelowAge)
+    .map(([key, rule]) => ({
+      key, status: checkField(profile, key, rule),
+      ...(rule.min !== undefined && rule.max !== undefined && { range: [rule.min, rule.max] }),
+    }));
   return { status: outcome(checks), checks };
 }
 

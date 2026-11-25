@@ -15,6 +15,12 @@ const profileLabels = {
   solarRoof: 'solarRoof', solarConnection: 'solarConnection', solarSubsidy: 'solarSubsidy',
   bankAccount: 'bankAccount', informalWork: 'informalWork', workerIncomeLimit: 'workerIncomeLimit',
   workerExclusion: 'workerExclusion', smallFarmRecord: 'smallFarmRecord', farmerPensionExclusion: 'farmerPensionExclusion',
+  traderWork: 'traderWork', traderTurnover: 'traderTurnover', traderExclusion: 'traderExclusion',
+  minorAge: 'minorAge', vatsalyaGuardian: 'vatsalyaGuardian', vatsalyaCitizenship: 'vatsalyaCitizenship',
+  schoolScreening: 'schoolScreening', jsskCare: 'jsskCare', publicFacility: 'publicFacility',
+  csssMerit: 'csssMerit', csssCourse: 'csssCourse', csssIncome: 'csssIncome', csssOtherAid: 'csssOtherAid',
+  aicteCourse: 'aicteCourse', aicteIncome: 'aicteIncome', aicteOtherAid: 'aicteOtherAid',
+  pragatiStudent: 'pragatiStudent', pragatiFamily: 'pragatiFamily', sakshamDisability: 'sakshamDisability',
 };
 const profileSections = [
   { title: 'solarScheme', fields: ['solarRoof', 'solarConnection', 'solarSubsidy'] },
@@ -25,6 +31,11 @@ const profileSections = [
     fields: ['smallFarmRecord', 'farmerPensionExclusion'],
     sourceUrl: 'https://www.pib.gov.in/PressNoteDetails.aspx?ModuleId=3&NoteId=159959&lang=1&reg=48',
   },
+  { title: 'traderPensionScheme', fields: ['traderWork', 'traderTurnover', 'traderExclusion'] },
+  { title: 'childSchemes', fields: ['minorAge', 'vatsalyaGuardian', 'vatsalyaCitizenship', 'schoolScreening'] },
+  { title: 'jsskScheme', fields: ['jsskCare', 'publicFacility'] },
+  { title: 'csssScheme', fields: ['csssMerit', 'csssCourse', 'csssIncome', 'csssOtherAid'] },
+  { title: 'aicteSchemes', fields: ['aicteCourse', 'aicteIncome', 'aicteOtherAid', 'pragatiStudent', 'pragatiFamily', 'sakshamDisability'] },
 ];
 
 export default function FindSchemes() {
@@ -134,10 +145,15 @@ export default function FindSchemes() {
                 {fields.map((key) => (
                   <label key={key}>
                     {profileLabel(key)}
-                    <select name={key} value={profile[key] ?? ''} onChange={updateProfile}>
-                      <option value="">{t('skipQuestion')}</option>
-                      {options.map((answer) => <option key={answer} value={answer}>{local(answer)}</option>)}
-                    </select>
+                    {key === 'minorAge' ? (
+                      <input type="number" name={key} min="0" max="120" step="1" inputMode="numeric"
+                        value={profile[key] ?? ''} onChange={updateProfile} />
+                    ) : (
+                      <select name={key} value={profile[key] ?? ''} onChange={updateProfile}>
+                        <option value="">{t('skipQuestion')}</option>
+                        {options.map((answer) => <option key={answer} value={answer}>{local(answer)}</option>)}
+                      </select>
+                    )}
                   </label>
                 ))}
               </details>
