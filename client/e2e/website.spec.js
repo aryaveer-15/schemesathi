@@ -232,3 +232,26 @@ test('state filters retain national listings and show official verification for 
   await expect(page.getByRole('region', { name: 'Who may qualify' })).toContainText('Applicants must live in Odisha.');
   await expect(page.getByRole('link', { name: 'Check on the official portal' })).toHaveAttribute('href', scheme.sourceUrl);
 });
+
+test('scholarships have distinct photo banners in the catalog and on their detail page', async ({ page }) => {
+  const slugs = [
+    'national-means-merit-scholarship', 'pm-usp-college-scholarship', 'aicte-pragati',
+    'aicte-saksham', 'aicte-swanath', 'wb-svmcm', 'wb-kanyashree', 'tn-pudhumai-penn',
+  ];
+  const scholarships = slugs.map((slug) => ({
+    ...scheme, _id: slug, slug, title: { en: slug }, category: 'education',
+  }));
+  await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme, ...scholarships] }));
+  await page.route('**/api/schemes/aicte-pragati', (route) => route.fulfill({ json: scholarships[2] }));
+  await page.goto('/schemes');
+  const photos = page.locator('.scheme-card .scholarship-banner img');
+  await expect(photos).toHaveCount(8);
+  const sources = await photos.evaluateAll((images) => images.map((image) => image.src));
+  expect(new Set(sources).size).toBe(8);
+  await page.getByRole('link', { name: 'aicte-pragati' }).click();
+  const detailPhoto = page.locator('.scheme-detail .scholarship-banner img');
+  await expect(detailPhoto).toBeVisible();
+  await expect.poll(() => detailPhoto.evaluate((image) => image.naturalWidth)).toBe(1280);
+  expect(await detailPhoto.evaluate((image) => image.src)).toBe(sources[2]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+});

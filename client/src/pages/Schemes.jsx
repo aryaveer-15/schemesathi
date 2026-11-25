@@ -4,6 +4,7 @@ import { api } from '../api';
 import { useLang } from '../useLang';
 import { localizedScheme } from '../schemeText';
 import { schemeQuestions } from '../eligibilityContent';
+import ScholarshipBanner from '../ScholarshipBanner';
 
 const pageSize = 24;
 
@@ -120,7 +121,8 @@ export default function Schemes() {
       {!loading && filtered.length > 0 ? (
         <ul className="grid">
           {filtered.slice(0, visibleCount).map((scheme) => (
-            <li key={scheme._id} className="card scheme-card">
+            <li key={scheme._id} className="card scheme-card" data-category={scheme.category}>
+              <ScholarshipBanner slug={scheme.slug} />
               <p className="meta">
                 <span>{t(scheme.category)}</span>
                 {scheme.state ? <span>{scheme.state === 'All India' ? t('allIndia') : scheme.state}</span> : null}
