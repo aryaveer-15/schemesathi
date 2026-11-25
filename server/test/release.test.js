@@ -100,7 +100,9 @@ test('publishes current catalog content for existing scheme IDs and searches it'
   assert.match(matches[0].title.en, /Samajik Sahayata/);
   assert.match(matches[0].sourceUrl, /^https:\/\/www\.pib\.gov\.in\//);
   const detail = await fetch(`${base}/api/schemes/${original._id}`);
-  assert.deepEqual(await detail.json(), matches[0]);
+  const { application, ...schemeDetail } = await detail.json();
+  assert.match(application.visit, /Gram Panchayat/);
+  assert.deepEqual(schemeDetail, matches[0]);
   assert.equal(original.title.en, 'National Social Assistance Programme');
   const list = await (await fetch(`${base}/api/schemes`)).json();
   assert.deepEqual(list.find((entry) => entry.slug === custom.slug), custom);

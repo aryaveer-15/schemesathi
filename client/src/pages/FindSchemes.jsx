@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
+import ApplicationDirections from '../ApplicationDirections';
 import { eligibilityText, schemeQuestions, schemeScope, schemeTitle } from '../eligibilityContent';
 import { localizedScheme } from '../schemeText';
 import { useAuth } from '../useAuth';
@@ -158,29 +159,33 @@ export default function FindSchemes() {
               return (
                 <section className="match-results-group" data-result={status} key={status}>
                   <h2>{local(status)}</h2>
-                  {schemes.map(({ slug, title, checks, sourceUrl }) => (
-                    <details key={slug} className="card match-section">
-                      <summary>{title ? localizedScheme({ slug, title }, 'title', lang) : schemeTitle(lang, slug)}</summary>
-                      <ul>{checks.map(({ key, status: check, range }) => {
-                        const answer = title ? (profile[key] ?? results.answers[key]) : results.answers[key];
-                        return (
-                          <li key={key}>
-                            {title ? profileLabel(key) : local(key, schemeQuestions[slug].questions[key])}{' '}
-                            {range && <bdi>({range.join('–')})</bdi>}{' '}
-                            <strong>{check === 'unanswered' ? t('skipQuestion') : typeof answer === 'number'
-                              ? new Intl.NumberFormat(lang).format(answer) : local(answer)}</strong>{' '}
-                            {check !== 'unanswered' && local(check === 'matched' ? 'matchedCheck' : check)}
-                          </li>
-                        );
-                      })}</ul>
-                      <p><a href={sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a></p>
-                      {!title && <Link to={`/eligibility?scheme=${encodeURIComponent(slug)}`}>{t('eligibility')}</Link>}
-                    </details>
+                  {schemes.map(({ slug, title, checks, sourceUrl, application }) => (
+                    <article key={slug} className="card match-result-card">
+                      <details className="match-section">
+                        <summary>{title ? localizedScheme({ slug, title }, 'title', lang) : schemeTitle(lang, slug)}</summary>
+                        <ul>{checks.map(({ key, status: check, range }) => {
+                          const answer = title ? (profile[key] ?? results.answers[key]) : results.answers[key];
+                          return (
+                            <li key={key}>
+                              {title ? profileLabel(key) : local(key, schemeQuestions[slug].questions[key])}{' '}
+                              {range && <bdi>({range.join('–')})</bdi>}{' '}
+                              <strong>{check === 'unanswered' ? t('skipQuestion') : typeof answer === 'number'
+                                ? new Intl.NumberFormat(lang).format(answer) : local(answer)}</strong>{' '}
+                              {check !== 'unanswered' && local(check === 'matched' ? 'matchedCheck' : check)}
+                            </li>
+                          );
+                        })}</ul>
+                        <p><a href={sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a></p>
+                        {!title && <Link to={`/eligibility?scheme=${encodeURIComponent(slug)}`}>{t('eligibility')}</Link>}
+                      </details>
+                      <ApplicationDirections application={application} />
+                    </article>
                   ))}
                 </section>
               );
             })}
             <p>{t('disclaimer')}</p>
+            <p>{t('matchCoverage')} <Link to="/schemes">{t('browse')}</Link></p>
           </section>
         )}
       </div>

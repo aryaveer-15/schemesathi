@@ -552,6 +552,18 @@ select {
   margin-block-start: 1.5rem;
 }
 
+.match-result-card + .match-result-card {
+  margin-block-start: 0.75rem;
+}
+
+.application-directions {
+  margin-block: 1rem;
+}
+
+.application-directions p:last-child {
+  margin-block-end: 0;
+}
+
 .match-results-group h2,
 .eligibility-result[data-result] > h2 {
   padding: 0.65rem 0.85rem;

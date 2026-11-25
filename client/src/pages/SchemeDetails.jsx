@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
+import ApplicationDirections from '../ApplicationDirections';
 import { schemeQuestions } from '../eligibilityContent';
 import { useLang } from '../useLang';
 import { localizedScheme } from '../schemeText';
@@ -62,6 +63,7 @@ function SchemeDetailsContent({ id }) {
             <p><Link to={`/eligibility?scheme=${encodeURIComponent(scheme.slug)}`}>{t('eligibility')}</Link></p>
           )}
           {hasProfile && <p><Link to="/my-schemes">{t('findSchemes')}</Link></p>}
+          <ApplicationDirections application={scheme.application} />
           {/^(https?:\/\/)/i.test(scheme.sourceUrl ?? '') && (
             <p><a href={scheme.sourceUrl} target="_blank" rel="noreferrer">
               {t(hasForm || hasProfile ? 'officialScheme' : 'officialCheck')}

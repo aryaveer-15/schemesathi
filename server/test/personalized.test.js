@@ -38,6 +38,7 @@ test('one authenticated questionnaire returns matches, exclusions and missing de
   assert.equal(results.length, 11);
   const bySlug = Object.fromEntries(results.map((result) => [result.slug, result]));
   assert.equal(bySlug['atal-pension-yojana'].status, 'matched');
+  assert.match(bySlug['atal-pension-yojana'].application.visit, /bank or post office/);
   assert.equal(bySlug['pm-ujjwala-yojana'].status, 'unmatched');
   assert.equal(bySlug['ayushman-bharat-pmjay'].status, 'review');
   assert.deepEqual(bySlug['ayushman-bharat-pmjay'].checks, [{ key: 'beneficiary', status: 'unanswered' }]);
@@ -50,7 +51,9 @@ test('rooftop solar uses shared citizenship and reviews missing or exceptional d
     assert.equal(response.status, 200);
     return (await response.json()).results.find(({ slug }) => slug === 'pm-surya-ghar');
   }
-  assert.equal((await matchSolar(profile)).status, 'matched');
+  const match = await matchSolar(profile);
+  assert.equal(match.status, 'matched');
+  assert.equal(match.application.url, 'https://www.pmsuryaghar.gov.in/');
   assert.equal((await matchSolar({ citizen: 'yes' })).status, 'review');
   assert.equal((await matchSolar({ ...profile, solarSubsidy: 'yes' })).status, 'review');
   assert.equal((await matchSolar({ ...profile, solarConnection: 'no' })).status, 'unmatched');

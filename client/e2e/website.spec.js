@@ -23,6 +23,11 @@ test('home, keyboard navigation, catalog and eligibility result', async ({ page 
       status: 'matched',
       checks: ['adultWoman', 'lpg', 'deprivation'].map((key) => ({ key, status: 'matched' })),
       sourceUrl: scheme.sourceUrl,
+      application: {
+        url: scheme.sourceUrl,
+        online: 'Pick an LPG provider and start an application.',
+        visit: 'You can also visit a participating LPG distributor.',
+      },
     } });
   });
   await page.goto('/');
@@ -45,6 +50,8 @@ test('home, keyboard navigation, catalog and eligibility result', async ({ page 
   await page.getByLabel('Does the household qualify as poor under the official deprivation declaration?').selectOption('yes');
   await page.getByRole('button', { name: 'Check eligibility' }).click();
   await expect(page.getByRole('heading', { name: 'Potential match' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open the official portal' })).toHaveAttribute('href', scheme.sourceUrl);
+  await expect(page.getByText('You can also visit a participating LPG distributor.')).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
@@ -134,6 +141,13 @@ test('registration opens the match questionnaire', async ({ page }) => {
         status: 'review',
         checks: [{ key: 'citizen', status: 'matched' }, { key: 'solarConnection', status: 'matched' }],
         sourceUrl: 'https://pmsuryaghar.gov.in/',
+      }, {
+        slug: 'pmjjby',
+        title: { en: 'PMJJBY' },
+        status: 'matched',
+        checks: [],
+        sourceUrl: 'https://www.indiapost.gov.in/insurance-services/pmjjby',
+        application: { visit: 'Ask your participating bank or post office for the enrolment form.' },
       }],
       effectiveAnswers: { citizen: 'yes' },
     } });
@@ -149,6 +163,7 @@ test('registration opens the match questionnaire', async ({ page }) => {
   await page.getByLabel('Does the home have a residential grid connection with the local electricity distributor?').selectOption('yes');
   await page.getByRole('button', { name: 'Show my matches' }).click();
   await expect(page.getByRole('heading', { name: 'Needs verification' })).toBeVisible();
+  await expect(page.getByText('Ask your participating bank or post office for the enrolment form.')).toBeVisible();
   await page.getByText('PM Surya Ghar', { exact: true }).click();
   await expect(page.getByRole('link', { name: 'Read the official criteria' }).last()).toHaveAttribute('href', 'https://pmsuryaghar.gov.in/');
 });

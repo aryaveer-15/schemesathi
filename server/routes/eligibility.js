@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const catalog = require('../catalog');
+const applicationDirections = require('../applicationDirections');
 const { rules, validProfile, fromProfile, evaluateProfile, outcome } = require('../profileEligibility');
 
 const router = express.Router();
@@ -96,6 +97,10 @@ function evaluate(answers, { criteria, sourceUrl, reviewCriteria = [] }) {
   return { status: outcome(checks), checks, sourceUrl };
 }
 
+function withNextSteps(slug, result) {
+  return result.status === 'matched' ? { ...result, application: applicationDirections[slug] } : result;
+}
+
 router.post('/matches', requireAuth, (req, res) => {
   res.set('Cache-Control', 'no-store');
   const { answers = {}, profile = {} } = req.body ?? {};
@@ -106,10 +111,10 @@ router.post('/matches', requireAuth, (req, res) => {
   const effectiveAnswers = { ...answers, ...fromProfile(profile) };
   const effectiveProfile = effectiveAnswers.citizen ? { ...profile, citizen: effectiveAnswers.citizen } : profile;
   const results = Object.entries(schemes).map(([slug, rule]) => ({
-    slug, ...evaluate(effectiveAnswers, rule),
+    slug, ...withNextSteps(slug, evaluate(effectiveAnswers, rule)),
   }));
   for (const { slug, title, sourceUrl } of profileSchemes) {
-    results.push({ slug, title, sourceUrl, ...evaluateProfile(effectiveProfile, rules[slug]) });
+    results.push({ slug, title, sourceUrl, ...withNextSteps(slug, evaluateProfile(effectiveProfile, rules[slug])) });
   }
   res.json({ results, effectiveAnswers });
 });
@@ -134,7 +139,7 @@ router.post('/:slug', (req, res) => {
     return res.status(400).json({ error: 'Provide an answer for each question' });
   }
 
-  res.json(evaluate(answers, rule));
+  res.json(withNextSteps(slug, evaluate(answers, rule)));
 });
 
 module.exports = router;

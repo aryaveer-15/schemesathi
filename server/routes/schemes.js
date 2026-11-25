@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Scheme = require('../models/Scheme');
+const applicationDirections = require('../applicationDirections');
 const { rules } = require('../profileEligibility');
 const catalog = new Map(require('../catalog').map((scheme) => [scheme.slug, scheme]));
 
@@ -46,7 +47,9 @@ router.get('/:id', async (req, res, next) => {
     }
     const scheme = await Scheme.findById(req.params.id).lean();
     if (!scheme) return res.status(404).json({ error: 'Scheme not found' });
-    res.json(publishedScheme(scheme));
+    const published = publishedScheme(scheme);
+    if (Object.hasOwn(applicationDirections, scheme.slug)) published.application = applicationDirections[scheme.slug];
+    res.json(published);
   } catch (err) {
     next(err);
   }

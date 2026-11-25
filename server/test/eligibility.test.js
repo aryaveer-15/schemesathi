@@ -44,6 +44,8 @@ test('each questionnaire matches the API and exposes its official source', async
     const { code, result } = await check(slug, answers);
     assert.equal(code, 200, slug);
     assert.equal(result.status, 'matched', slug);
+    assert.ok(result.application?.online || result.application?.visit, slug);
+    if (result.application.online) assert.equal(new URL(result.application.url).protocol, 'https:', slug);
     assert.deepEqual(result.checks, Object.keys(answers).map((key) => ({ key, status: 'matched' })), slug);
     const response = await fetch(`${base}/${slug}`);
     assert.equal(response.status, 200, slug);
@@ -67,6 +69,7 @@ test('uncertainty, exceptions, and unmet requirements retain distinct results', 
     const { code, result } = await check(slug, { ...matches[slug], ...overrides });
     assert.equal(code, 200);
     assert.equal(result.status, expected, slug);
+    assert.equal(result.application, undefined, slug);
   }
 });
 

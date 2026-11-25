@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
+import ApplicationDirections from '../ApplicationDirections';
 import { eligibilityText, schemeQuestions, schemeScope, schemeTitle } from '../eligibilityContent';
 import { useLang } from '../useLang';
 
@@ -135,6 +136,7 @@ function EligibilityForm({ initialSlug }) {
                 </li>
               ))}
             </ul>
+            <ApplicationDirections application={result.application} />
             <p>{t('disclaimer')}</p>
             <a href={result.sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a>
           </section>

@@ -1,5 +1,8 @@
 export default {
   en: {
+    howToGetBenefit: "How to get this benefit",
+    openOfficialPortal: "Open the official portal",
+    matchCoverage: "These results cover schemes with an eligibility check in SchemeSathi. More schemes and their official links are in the catalog.",
     eligibilityRequirements: "Who may qualify",
     eligibilitySource: "Read the official criteria",
     solarScheme: "PM Surya Ghar rooftop solar",
@@ -23,6 +26,9 @@ export default {
     moreSchemes: "Show more schemes",
   },
   hi: {
+    howToGetBenefit: "इस योजना का लाभ कैसे लें",
+    openOfficialPortal: "आधिकारिक पोर्टल खोलें",
+    matchCoverage: "इन नतीजों में वे योजनाएँ शामिल हैं जिनकी पात्रता SchemeSathi जाँच सकता है। बाकी योजनाएँ और उनके आधिकारिक लिंक सूची में देखें।",
     eligibilityRequirements: "कौन पात्र हो सकता है",
     eligibilitySource: "आधिकारिक पात्रता शर्तें पढ़ें",
     solarScheme: "पीएम सूर्य घर रूफटॉप सोलर",
