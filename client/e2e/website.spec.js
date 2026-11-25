@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { createRequire } from 'node:module';
 import { schemeQuestions } from '../src/eligibilityContent.js';
 import { additionalTranslations } from '../src/locales/index.js';
 import { translatedScheme } from '../src/schemeText.js';
+
+const catalog = createRequire(import.meta.url)('../../server/catalog.js');
 
 const scheme = {
   _id: '64f000000000000000000001',
@@ -233,25 +236,33 @@ test('state filters retain national listings and show official verification for 
   await expect(page.getByRole('link', { name: 'Check on the official portal' })).toHaveAttribute('href', scheme.sourceUrl);
 });
 
-test('scholarships have distinct photo banners in the catalog and on their detail page', async ({ page }) => {
-  const slugs = [
+test('every scheme has a catalog banner and detail pages reuse the same photo', async ({ page }) => {
+  const scholarshipSlugs = [
     'national-means-merit-scholarship', 'pm-usp-college-scholarship', 'aicte-pragati',
     'aicte-saksham', 'aicte-swanath', 'wb-svmcm', 'wb-kanyashree', 'tn-pudhumai-penn',
   ];
-  const scholarships = slugs.map((slug) => ({
-    ...scheme, _id: slug, slug, title: { en: slug }, category: 'education',
-  }));
-  await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme, ...scholarships] }));
-  await page.route('**/api/schemes/aicte-pragati', (route) => route.fulfill({ json: scholarships[2] }));
+  const schemes = catalog.map((entry) => ({ ...entry, _id: entry.slug }));
+  await page.route('**/api/schemes', (route) => route.fulfill({ json: schemes }));
+  await page.route('**/api/schemes/*', (route) => {
+    const slug = new URL(route.request().url()).pathname.split('/').at(-1);
+    return route.fulfill({ json: schemes.find((entry) => entry.slug === slug) });
+  });
   await page.goto('/schemes');
-  const photos = page.locator('.scheme-card .scholarship-banner img');
-  await expect(photos).toHaveCount(8);
+  const photos = page.locator('.scheme-card .scheme-banner img');
+  await expect(photos.first()).toBeVisible();
+  const showMore = page.getByRole('button', { name: 'Show more schemes' });
+  while (await showMore.isVisible()) await showMore.click();
+  await expect(photos).toHaveCount(schemes.length);
   const sources = await photos.evaluateAll((images) => images.map((image) => image.src));
-  expect(new Set(sources).size).toBe(8);
-  await page.getByRole('link', { name: 'aicte-pragati' }).click();
-  const detailPhoto = page.locator('.scheme-detail .scholarship-banner img');
-  await expect(detailPhoto).toBeVisible();
-  await expect.poll(() => detailPhoto.evaluate((image) => image.naturalWidth)).toBe(1280);
-  expect(await detailPhoto.evaluate((image) => image.src)).toBe(sources[2]);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  const scholarshipSources = scholarshipSlugs.map((slug) => sources[schemes.findIndex((entry) => entry.slug === slug)]);
+  expect(new Set(scholarshipSources).size).toBe(scholarshipSlugs.length);
+  for (const slug of ['aicte-pragati', 'pm-kisan', 'pm-surya-ghar']) {
+    const index = schemes.findIndex((entry) => entry.slug === slug);
+    await page.goto(`/schemes/${slug}`);
+    const detailPhoto = page.locator('.scheme-detail .scheme-banner img');
+    await expect(detailPhoto).toBeVisible();
+    await expect.poll(() => detailPhoto.evaluate((image) => image.naturalWidth)).toBe(1280);
+    expect(await detailPhoto.evaluate((image) => image.src)).toBe(sources[index]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  }
 });

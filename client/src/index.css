@@ -545,11 +545,7 @@ select {
   --card-padding: 1.25rem;
 }
 
-.scheme-card:not(:has(.scholarship-banner)) {
-  border-block-start: 3px solid var(--category-marker, var(--border));
-}
-
-.scholarship-banner {
+.scheme-banner {
   overflow: hidden;
   margin: calc(-1 * var(--card-padding)) calc(-1 * var(--card-padding)) var(--card-padding);
   border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
@@ -557,7 +553,7 @@ select {
   background: var(--accent-soft);
 }
 
-.scholarship-banner img {
+.scheme-banner img {
   display: block;
   width: 100%;
   height: auto;
@@ -565,7 +561,7 @@ select {
   object-fit: cover;
 }
 
-.scheme-detail .scholarship-banner img {
+.scheme-detail .scheme-banner img {
   height: clamp(10rem, 30vw, 23rem);
   object-position: center 40%;
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import ApplicationDirections from '../ApplicationDirections';
-import ScholarshipBanner from '../ScholarshipBanner';
+import SchemeBanner from '../SchemeBanner';
 import { schemeQuestions } from '../eligibilityContent';
 import { useLang } from '../useLang';
 import { localizedScheme } from '../schemeText';
@@ -44,7 +44,7 @@ function SchemeDetailsContent({ id }) {
       {!error && !scheme && <p role="status">{t('loading')}…</p>}
       {scheme && (
         <article className="card scheme-detail" data-category={scheme.category}>
-          <ScholarshipBanner slug={scheme.slug} featured />
+          <SchemeBanner slug={scheme.slug} category={scheme.category} featured />
           <h1>{localizedScheme(scheme, 'title', lang)}</h1>
           <p className="meta">
             <span>{t(scheme.category)}</span>
