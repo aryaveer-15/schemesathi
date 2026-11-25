@@ -1,5 +1,8 @@
 export default {
   en: {
+    extraSchemeChecks: "More scheme checks",
+    extraChecksFailed: "Some scheme questions could not be loaded.",
+    publicSchemeAccess: "Open to the public.",
     howToVerifyScheme: "Where to verify",
     tbScheme: "Ni-kshay Poshan Yojana",
     dialysisScheme: "National Dialysis Programme (free BPL coverage)",
@@ -89,6 +92,9 @@ export default {
     moreSchemes: "Show more schemes",
   },
   hi: {
+    extraSchemeChecks: "और योजनाओं की जाँच",
+    extraChecksFailed: "कुछ योजनाओं के सवाल लोड नहीं हो सके।",
+    publicSchemeAccess: "सभी के लिए उपलब्ध।",
     howToVerifyScheme: "कहाँ सत्यापित करें",
     tbScheme: "नि-क्षय पोषण योजना",
     dialysisScheme: "राष्ट्रीय डायलिसिस कार्यक्रम (बीपीएल के लिए निःशुल्क सेवा)",

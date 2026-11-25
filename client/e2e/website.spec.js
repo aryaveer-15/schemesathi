@@ -123,11 +123,17 @@ test('registration opens the match questionnaire', async ({ page }) => {
   const user = { name: 'Demo Resident' };
   await page.route('**/api/auth/register', (route) => route.fulfill({ status: 201, json: { token: 'demo-token', user } }));
   await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user } }));
+  await page.route('**/api/eligibility/profile-checks', (route) => route.fulfill({ json: [{
+    slug: 'pm-matru-vandana',
+    title: { en: 'PMMVY maternity support' },
+    sourceUrl: 'https://pmmvy.wcd.gov.in/',
+    questions: [{ key: 'maternityStage', text: 'Is this for your first living child?' }],
+  }] }));
   await page.route('**/api/eligibility/matches', async (route) => {
     expect(route.request().headers().authorization).toBe('Bearer demo-token');
     expect(route.request().postDataJSON()).toEqual({
       answers: {},
-      profile: { citizen: 'yes', solarConnection: 'yes', minorAge: 12, ruralHousingList: 'unknown' },
+      profile: { citizen: 'yes', solarConnection: 'yes', minorAge: 12, ruralHousingList: 'unknown', maternityStage: 'yes' },
     });
     await route.fulfill({ json: {
       results: [{
@@ -159,12 +165,15 @@ test('registration opens the match questionnaire', async ({ page }) => {
       effectiveAnswers: { citizen: 'yes' },
     } });
   });
-  await page.goto('/register');
+  await page.goto('/my-schemes?scheme=pm-matru-vandana');
+  await expect(page).toHaveURL(/\/login\?scheme=pm-matru-vandana$/);
+  await page.getByRole('main').getByRole('link', { name: 'Register' }).click();
   await page.getByLabel('Name', { exact: true }).fill(user.name);
   await page.getByLabel('Email', { exact: true }).fill('test@example.test');
   await page.getByLabel('Password', { exact: true }).fill('example-password');
   await page.getByRole('button', { name: 'Register', exact: true }).click();
-  await expect(page).toHaveURL(/\/my-schemes$/);
+  await expect(page).toHaveURL(/\/my-schemes\?scheme=pm-matru-vandana$/);
+  await page.getByLabel('Is this for your first living child?').selectOption('yes');
   await page.getByRole('region', { name: 'About you' }).getByLabel('Are you an Indian citizen?').selectOption('yes');
   await page.getByText('PM Surya Ghar rooftop solar', { exact: true }).click();
   await page.getByLabel('Does the home have a residential grid connection with the local electricity distributor?').selectOption('yes');

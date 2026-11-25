@@ -129,7 +129,8 @@ export default function Schemes() {
                 {localizedScheme(scheme, 'title', lang)} <span className="direction-arrow" aria-hidden="true">→</span>
               </Link></h2>
               <p>{localizedScheme(scheme, 'summary', lang)}</p>
-              {scheme.eligibilityMode !== 'profile' && !Object.hasOwn(schemeQuestions, scheme.slug) && (
+              {scheme.eligibilityMode === 'public' && <p className="muted">{t('publicSchemeAccess')}</p>}
+              {!scheme.eligibilityMode && !Object.hasOwn(schemeQuestions, scheme.slug) && (
                 <p className="muted catalog-coverage">{t('officialCheck')}</p>
               )}
             </li>

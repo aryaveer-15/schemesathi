@@ -18,6 +18,7 @@ function SchemeDetailsContent({ id }) {
   const [attempt, setAttempt] = useState(0);
   const hasForm = scheme && Object.hasOwn(schemeQuestions, scheme.slug);
   const hasProfile = scheme?.eligibilityMode === 'profile';
+  const publicAccess = scheme?.eligibilityMode === 'public';
 
   useEffect(() => {
     let active = true;
@@ -62,11 +63,12 @@ function SchemeDetailsContent({ id }) {
           {hasForm && (
             <p><Link to={`/eligibility?scheme=${encodeURIComponent(scheme.slug)}`}>{t('eligibility')}</Link></p>
           )}
-          {hasProfile && <p><Link to="/my-schemes">{t('findSchemes')}</Link></p>}
+          {hasProfile && <p><Link to={`/my-schemes?scheme=${encodeURIComponent(scheme.slug)}`}>{t('findSchemes')}</Link></p>}
+          {publicAccess && <p>{t('publicSchemeAccess')}</p>}
           <ApplicationDirections application={scheme.application} />
           {/^(https?:\/\/)/i.test(scheme.sourceUrl ?? '') && (
             <p><a href={scheme.sourceUrl} target="_blank" rel="noreferrer">
-              {t(hasForm || hasProfile ? 'officialScheme' : 'officialCheck')}
+              {t(hasForm || hasProfile || publicAccess ? 'officialScheme' : 'officialCheck')}
             </a></p>
           )}
           <p className="disclaimer">{t('disclaimer')}</p>

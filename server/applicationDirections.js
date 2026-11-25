@@ -1,4 +1,7 @@
+const remainingEligibility = require('./remainingEligibility');
+
 module.exports = {
+  ...Object.fromEntries(Object.entries(remainingEligibility).map(([slug, { application }]) => [slug, application])),
   'pm-kisan': {
     url: 'https://www.pmkisan.gov.in/RegistrationFormupdated.aspx',
     online: 'Use New Farmer Registration on PM-KISAN. The state verifies your application and land records.',

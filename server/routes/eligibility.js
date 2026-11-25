@@ -2,6 +2,7 @@ const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const catalog = require('../catalog');
 const applicationDirections = require('../applicationDirections');
+const remainingEligibility = require('../remainingEligibility');
 const { rules, validProfile, fromProfile, evaluateProfile, outcome } = require('../profileEligibility');
 
 const router = express.Router();
@@ -81,6 +82,13 @@ const schemes = {
 const supportedAnswers = new Set(['yes', 'no', 'unknown']);
 const profileQuestions = new Set(Object.values(schemes).flatMap(({ criteria }) => Object.keys(criteria)));
 const profileSchemes = catalog.filter(({ slug }) => Object.hasOwn(rules, slug));
+const additionalSections = profileSchemes
+  .filter(({ slug }) => Object.hasOwn(remainingEligibility, slug))
+  .map(({ slug, title, sourceUrl }) => ({
+    slug, title, sourceUrl: remainingEligibility[slug].sourceUrl ?? sourceUrl,
+    questions: Object.entries(remainingEligibility[slug].criteria)
+      .map(([key, rule]) => ({ key, text: rule.question })),
+  }));
 
 function validAnswers(answers, questions) {
   return answers && typeof answers === 'object' && !Array.isArray(answers)
@@ -124,9 +132,16 @@ router.post('/matches', requireAuth, (req, res) => {
     slug, ...withNextSteps(slug, evaluate(effectiveAnswers, rule)),
   }));
   for (const { slug, title, sourceUrl } of profileSchemes) {
-    results.push({ slug, title, sourceUrl, ...withNextSteps(slug, evaluateProfile(effectiveProfile, rules[slug])) });
+    results.push({
+      slug, title, sourceUrl: remainingEligibility[slug]?.sourceUrl ?? sourceUrl,
+      ...withNextSteps(slug, evaluateProfile(effectiveProfile, rules[slug])),
+    });
   }
   res.json({ results, effectiveAnswers });
+});
+
+router.get('/profile-checks', (_req, res) => {
+  res.json(additionalSections);
 });
 
 router.get('/:slug', (req, res) => {

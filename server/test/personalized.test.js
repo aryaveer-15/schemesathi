@@ -4,6 +4,8 @@ const { randomUUID } = require('node:crypto');
 const { test, before, after } = require('node:test');
 const jwt = require('jsonwebtoken');
 const createApp = require('../app');
+const catalog = require('../catalog');
+const remainingEligibility = require('../remainingEligibility');
 
 let server;
 let base;
@@ -35,7 +37,7 @@ test('one authenticated questionnaire returns matches, exclusions and missing de
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   const { results } = await response.json();
-  assert.equal(results.length, 31);
+  assert.equal(results.length, 51);
   const bySlug = Object.fromEntries(results.map((result) => [result.slug, result]));
   assert.equal(bySlug['atal-pension-yojana'].status, 'matched');
   assert.match(bySlug['atal-pension-yojana'].application.visit, /bank or post office/);
@@ -170,4 +172,31 @@ test('ten more programmes check requirements and direct users to apply or verify
     assert.equal(incomplete[slug].status, 'unmatched', slug);
     assert.equal(incomplete[slug].verification, undefined, slug);
   }
+});
+
+test('all maintained listings return a result, with sourced questions and directions for the new entries', async () => {
+  const response = await fetch(base + '/eligibility/profile-checks');
+  assert.equal(response.status, 200);
+  const sections = await response.json();
+  assert.equal(sections.length, 20);
+  const profile = Object.fromEntries(Object.values(remainingEligibility).flatMap(({ criteria }) =>
+    Object.entries(criteria).map(([key, rule]) => [key, rule.equals])));
+  const matched = await post('/eligibility/matches', { profile });
+  assert.equal(matched.status, 200);
+  const { results } = await matched.json();
+  const bySlug = Object.fromEntries(results.map((result) => [result.slug, result]));
+  assert.deepEqual(Object.keys(bySlug).sort(), catalog.map(({ slug }) => slug).sort());
+  for (const section of sections) {
+    const result = bySlug[section.slug];
+    assert.equal(new URL(section.sourceUrl).protocol, 'https:', section.slug);
+    assert.equal(result.status, 'matched', section.slug);
+    assert.ok(result.application.online || result.application.visit, section.slug);
+    assert.deepEqual(result.checks.map(({ key, question }) => [key, question]),
+      section.questions.map(({ key, text }) => [key, text]));
+  }
+  assert.equal(bySlug['jan-aushadhi'].application.url, 'https://janaushadhi.gov.in/locate-kendra');
+  const missing = await post('/eligibility/matches', { profile: { subhadraResident: 'yes', subhadraExclusions: 'unknown' } });
+  const odisha = (await missing.json()).results.find(({ slug }) => slug === 'odisha-subhadra');
+  assert.equal(odisha.status, 'review');
+  assert.match(odisha.verification, /Mo Seva Kendra/);
 });

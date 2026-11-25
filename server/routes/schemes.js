@@ -16,7 +16,9 @@ function publishedScheme(scheme) {
   if (!entry) return scheme;
   const { title, summary, sourceUrl, eligibilityRequirements, eligibilitySourceUrl } = entry;
   const result = { ...scheme, title, summary, sourceUrl, eligibilityRequirements, eligibilitySourceUrl };
-  if (Object.hasOwn(rules, scheme.slug)) result.eligibilityMode = 'profile';
+  if (Object.hasOwn(rules, scheme.slug)) {
+    result.eligibilityMode = Object.keys(rules[scheme.slug]).length ? 'profile' : 'public';
+  }
   return result;
 }
 

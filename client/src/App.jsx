@@ -1,4 +1,4 @@
-import { Link, Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './useAuth';
 import { useLang } from './useLang';
 import { languages } from './locales';
@@ -14,6 +14,7 @@ import SchemeChat from './pages/SchemeChat';
 export default function App() {
   const { t, lang, setLang } = useLang();
   const { user, token, signOut } = useAuth();
+  const { search } = useLocation();
 
   return (
     <div className="app">
@@ -60,7 +61,7 @@ export default function App() {
         <Route path="/schemes" element={<Schemes />} />
         <Route path="/schemes/:id" element={<SchemeDetails />} />
         <Route path="/eligibility" element={<Eligibility />} />
-        <Route path="/my-schemes" element={token ? <FindSchemes /> : <Navigate to="/login" replace />} />
+        <Route path="/my-schemes" element={token ? <FindSchemes /> : <Navigate to={{ pathname: '/login', search }} replace />} />
         <Route path="/scheme-chat" element={<SchemeChat />} />
         <Route path="*" element={<main className="page">
           <h1>{t('pageMissing')}</h1>

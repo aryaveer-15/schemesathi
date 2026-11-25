@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import ApplicationDirections from '../ApplicationDirections';
 import { eligibilityText, schemeQuestions, schemeScope, schemeTitle } from '../eligibilityContent';
@@ -59,8 +59,13 @@ const profileSections = [
 export default function FindSchemes() {
   const { token, signOut } = useAuth();
   const { lang, t } = useLang();
+  const [searchParams] = useSearchParams();
+  const requestedScheme = searchParams.get('scheme');
   const [answers, setAnswers] = useState({});
   const [profile, setProfile] = useState({});
+  const [additionalSections, setAdditionalSections] = useState([]);
+  const [sectionsFailed, setSectionsFailed] = useState(false);
+  const [sectionAttempt, setSectionAttempt] = useState(0);
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -68,6 +73,17 @@ export default function FindSchemes() {
   const profileLabel = (key) => key === 'citizen'
     ? local(key, schemeQuestions['atal-pension-yojana'].questions.citizen)
     : t(profileLabels[key]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api('/api/eligibility/profile-checks', { signal: controller.signal }).then((sections) => {
+      if (!Array.isArray(sections)) throw new Error('Invalid scheme sections response');
+      if (!controller.signal.aborted) setAdditionalSections(sections);
+    }).catch(() => {
+      if (!controller.signal.aborted) setSectionsFailed(true);
+    });
+    return () => controller.abort();
+  }, [sectionAttempt]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -177,6 +193,36 @@ export default function FindSchemes() {
               </details>
             );
           })}
+          {sectionsFailed && (
+            <p role="alert" className="alert">
+              {t('extraChecksFailed')}{' '}
+              <button type="button" onClick={() => {
+                setSectionsFailed(false);
+                setSectionAttempt((attempt) => attempt + 1);
+              }}>{t('retry')}</button>
+            </p>
+          )}
+          {additionalSections.length > 0 && (
+            <details className="card match-section" open={additionalSections.some(({ slug }) => slug === requestedScheme) || undefined}>
+              <summary>{t('extraSchemeChecks')}</summary>
+              {additionalSections.map(({ slug, title, sourceUrl, questions }) => (
+                <details className="match-section" key={slug} open={requestedScheme === slug || undefined}>
+                  <summary>{localizedScheme({ slug, title }, 'title', lang)}</summary>
+                  {questions.length === 0 && <p>{t('publicSchemeAccess')}</p>}
+                  <p><a href={sourceUrl} target="_blank" rel="noreferrer">{t('officialScheme')}</a></p>
+                  {questions.map(({ key, text }) => (
+                    <label key={key}>
+                      {text ?? profileLabel(key)}
+                      <select name={key} value={profile[key] ?? ''} onChange={updateProfile}>
+                        <option value="">{t('skipQuestion')}</option>
+                        {options.map((answer) => <option key={answer} value={answer}>{local(answer)}</option>)}
+                      </select>
+                    </label>
+                  ))}
+                </details>
+              ))}
+            </details>
+          )}
           {Object.entries(schemeQuestions).map(([slug, { questions }]) => {
             const scope = schemeScope(lang, slug);
             const remaining = Object.entries(questions).filter(([key]) => !answeredByProfile[key]);
@@ -214,19 +260,19 @@ export default function FindSchemes() {
                     <article key={slug} className="card match-result-card">
                       <details className="match-section">
                         <summary>{title ? localizedScheme({ slug, title }, 'title', lang) : schemeTitle(lang, slug)}</summary>
-                        <ul>{checks.map(({ key, status: check, range }) => {
+                        {checks.length ? <ul>{checks.map(({ key, status: check, range, question }) => {
                           const answer = title ? (profile[key] ?? results.answers[key]) : results.answers[key];
                           const displayedAnswer = key === 'bankAccount' && profile.savings === 'yes' ? 'yes' : answer;
                           return (
                             <li key={key}>
-                              {title ? profileLabel(key) : local(key, schemeQuestions[slug].questions[key])}{' '}
+                              {title ? (question ?? profileLabel(key)) : local(key, schemeQuestions[slug].questions[key])}{' '}
                               {range && <bdi>({range.join('–')})</bdi>}{' '}
                               <strong>{check === 'unanswered' ? t('skipQuestion') : typeof displayedAnswer === 'number'
                                 ? new Intl.NumberFormat(lang).format(displayedAnswer) : local(displayedAnswer)}</strong>{' '}
                               {check !== 'unanswered' && local(check === 'matched' ? 'matchedCheck' : check)}
                             </li>
                           );
-                        })}</ul>
+                        })}</ul> : <p>{t('publicSchemeAccess')}</p>}
                         <p><a href={sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a></p>
                         {!title && <Link to={`/eligibility?scheme=${encodeURIComponent(slug)}`}>{t('eligibility')}</Link>}
                       </details>

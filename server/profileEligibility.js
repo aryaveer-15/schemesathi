@@ -1,5 +1,8 @@
 const options = ['yes', 'no', 'unknown'];
 const yesNo = (value) => options.includes(value);
+const remainingEligibility = require('./remainingEligibility');
+const additionalQuestions = new Set(Object.values(remainingEligibility)
+  .flatMap(({ criteria }) => Object.keys(criteria)));
 
 function wholeNumber(value, min, max) {
   return Number.isSafeInteger(value) && value >= min && value <= max;
@@ -175,11 +178,15 @@ const rules = {
     missedVaccination: { equals: 'yes' },
     vaccinationRound: { equals: 'yes', reviewWhenDifferent: true },
   },
+  ...Object.fromEntries(Object.entries(remainingEligibility).map(([slug, { criteria }]) => [slug, criteria])),
 };
 
 function validProfile(profile) {
   return profile && typeof profile === 'object' && !Array.isArray(profile)
-    && Object.entries(profile).every(([key, value]) => Object.hasOwn(fields, key) && fields[key](value));
+    && Object.entries(profile).every(([key, value]) => {
+      if (Object.hasOwn(fields, key)) return fields[key](value);
+      return additionalQuestions.has(key) && yesNo(value);
+    });
 }
 
 function fromProfile(profile) {
@@ -220,6 +227,7 @@ function evaluateProfile(profile, criteria) {
     .filter(([, rule]) => rule.skipBelowAge === undefined || (profile.minorAge ?? Infinity) >= rule.skipBelowAge)
     .map(([key, rule]) => ({
       key, status: checkField(profile, key, rule),
+      ...(rule.question && { question: rule.question }),
       ...(rule.min !== undefined && rule.max !== undefined && { range: [rule.min, rule.max] }),
     }));
   return { status: outcome(checks), checks };

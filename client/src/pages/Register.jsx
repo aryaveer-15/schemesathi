@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../useAuth';
 import { useLang } from '../useLang';
@@ -8,6 +8,7 @@ export default function Register() {
   const { t } = useLang();
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const { search } = useLocation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +25,7 @@ export default function Register() {
         body: { name, email, password },
       });
       signIn(data);
-      navigate('/my-schemes');
+      navigate({ pathname: '/my-schemes', search });
     } catch (err) {
       const messages = { 409: 'emailInUse', 429: 'rateLimited' };
       setError(messages[err.status] ?? 'registerFailed');
@@ -78,7 +79,7 @@ export default function Register() {
           {t('register')}
         </button>
         <p className="muted">
-          <Link to="/login">{t('login')}</Link>
+          <Link to={{ pathname: '/login', search }}>{t('login')}</Link>
         </p>
       </form>
     </main>
