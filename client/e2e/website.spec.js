@@ -118,13 +118,22 @@ test('registration opens the match questionnaire', async ({ page }) => {
   await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user } }));
   await page.route('**/api/eligibility/matches', async (route) => {
     expect(route.request().headers().authorization).toBe('Bearer demo-token');
-    expect(route.request().postDataJSON()).toEqual({ answers: {}, profile: { citizen: 'yes' } });
+    expect(route.request().postDataJSON()).toEqual({
+      answers: {},
+      profile: { citizen: 'yes', solarConnection: 'yes' },
+    });
     await route.fulfill({ json: {
       results: [{
         slug: 'atal-pension-yojana',
         status: 'review',
         checks: [{ key: 'citizen', status: 'matched' }, { key: 'savings', status: 'unanswered' }],
         sourceUrl: 'https://pfrda.org.in/',
+      }, {
+        slug: 'pm-surya-ghar',
+        title: { en: 'PM Surya Ghar' },
+        status: 'review',
+        checks: [{ key: 'citizen', status: 'matched' }, { key: 'solarConnection', status: 'matched' }],
+        sourceUrl: 'https://pmsuryaghar.gov.in/',
       }],
       effectiveAnswers: { citizen: 'yes' },
     } });
@@ -136,8 +145,12 @@ test('registration opens the match questionnaire', async ({ page }) => {
   await page.getByRole('button', { name: 'Register', exact: true }).click();
   await expect(page).toHaveURL(/\/my-schemes$/);
   await page.getByRole('region', { name: 'About you' }).getByLabel('Are you an Indian citizen?').selectOption('yes');
+  await page.getByText('PM Surya Ghar rooftop solar', { exact: true }).click();
+  await page.getByLabel('Does the home have a residential grid connection with the local electricity distributor?').selectOption('yes');
   await page.getByRole('button', { name: 'Show my matches' }).click();
   await expect(page.getByRole('heading', { name: 'Needs verification' })).toBeVisible();
+  await page.getByText('PM Surya Ghar', { exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Read the official criteria' }).last()).toHaveAttribute('href', 'https://pmsuryaghar.gov.in/');
 });
 
 test('guest help chat shows official scheme links without sending chat messages', async ({ page }) => {
@@ -168,7 +181,10 @@ test('the homepage Help chat prompt opens the matching answer', async ({ page })
 });
 
 test('state filters retain national listings and show official verification for unverified schemes', async ({ page }) => {
-  const stateScheme = { ...scheme, _id: 'abc', slug: 'odisha-sample', title: { en: 'Odisha scheme' }, level: 'state', state: 'Odisha' };
+  const stateScheme = {
+    ...scheme, _id: 'abc', slug: 'odisha-sample', title: { en: 'Odisha scheme' }, level: 'state', state: 'Odisha',
+    eligibilityRequirements: [{ en: 'Applicants must live in Odisha.' }],
+  };
   const other = { ...stateScheme, _id: 'xyz', slug: 'karnataka-sample', title: { en: 'Karnataka scheme' }, state: 'Karnataka' };
   await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme, stateScheme, other] }));
   await page.route('**/api/schemes/abc', (route) => route.fulfill({ json: stateScheme }));
@@ -177,5 +193,6 @@ test('state filters retain national listings and show official verification for 
   await expect(page.getByRole('link', { name: scheme.title.en })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Karnataka scheme' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Odisha scheme' }).click();
+  await expect(page.getByRole('region', { name: 'Who may qualify' })).toContainText('Applicants must live in Odisha.');
   await expect(page.getByRole('link', { name: 'Check on the official portal' })).toHaveAttribute('href', scheme.sourceUrl);
 });

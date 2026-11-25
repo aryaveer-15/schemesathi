@@ -13,8 +13,8 @@ function escapeRegex(text) {
 function publishedScheme(scheme) {
   const entry = catalog.get(scheme.slug);
   if (!entry) return scheme;
-  const { title, summary, sourceUrl } = entry;
-  const result = { ...scheme, title, summary, sourceUrl };
+  const { title, summary, sourceUrl, eligibilityRequirements, eligibilitySourceUrl } = entry;
+  const result = { ...scheme, title, summary, sourceUrl, eligibilityRequirements, eligibilitySourceUrl };
   if (Object.hasOwn(rules, scheme.slug)) result.eligibilityMode = 'profile';
   return result;
 }

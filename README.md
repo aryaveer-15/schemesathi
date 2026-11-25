@@ -31,13 +31,13 @@ Set a host health check on `GET /api/health`. It returns HTTP 503 when MongoDB i
 
 ## Maintain scheme information
 
-Edit `server/catalog.js` to update the 20 maintained entries. Existing scheme IDs and MongoDB records are preserved. The API publishes maintained titles, summaries, and source URLs for those slugs. Keep the questions in `client/src/eligibilityContent.js` and the checks in `server/routes/eligibility.js` and `server/profileEligibility.js` aligned with official criteria.
+Edit `server/catalog.js` or `server/additionalCatalog.js` to update the 51 maintained entries. Existing scheme IDs and MongoDB records are preserved. The API publishes maintained titles, summaries, eligibility requirements where available, and source URLs for those slugs. Keep the questions in `client/src/eligibilityContent.js` and the checks in `server/routes/eligibility.js` and `server/profileEligibility.js` aligned with official criteria.
 
 When updating user-facing text or maintained scheme content, update the corresponding translations in `client/src/locales/`. The original English, Hindi, and Kannada copies are in `client/src/i18n.jsx`, `client/src/eligibilityContent.js`, and `server/catalog.js`.
 
 Eligibility results explain whether the answers match the criteria checked by SchemeSathi. Users should confirm current rules with the official programme before applying. The housing check covers PMAY Urban 2.0. PM-JAY coverage for people below 70 requires checking the official beneficiary portal. The pension check covers old-age and widow pensions. The questionnaire directs disability pension applicants to verify applicable rules with their state office.
 
-Signed-in users can use **Find my schemes** to check ten schemes in one submission. Profile answers apply to each applicable check. Unanswered criteria require verification, and questionnaire answers are not stored. Catalog entries without a checker link to the official programme.
+Signed-in users can use **Find my schemes** to check eleven schemes in one submission. Profile answers apply to each applicable check. Unanswered criteria require verification, and questionnaire answers are not stored. Catalog entries without a checker link to the official programme.
 
 The **Help chat** answers common questions about accounts, eligibility, and where to apply. Visitors can select a topic or type a supported scheme name. Messages are matched in the browser and cleared when the visitor leaves the page. The chat reads public scheme details and official links from SchemeSathi's catalog and requires no external AI service.
 
@@ -46,3 +46,5 @@ The **Help chat** answers common questions about accounts, eligibility, and wher
 Use an export that allows redistribution. In `server`, run `npm run import:catalog -- path/to/catalog.json` to validate the entire file. Add `--apply` to insert missing schemes into the configured MongoDB database. Imports preserve existing records and publish official links for verification.
 
 The JSON has a top-level `sourceUrl` for the dataset and a `schemes` array. Each scheme requires a unique `slug`, a `category` from `server/catalogFields.js`, a `level` of `central` or `state`, a `state` for state schemes, an official `sourceUrl`, a `title`, and a `summary`. Title and summary can be English strings or objects keyed by locale, with `en` required. Both URLs must use HTTPS. The importer accepts up to 20,000 schemes per file.
+
+Each entry can also include up to 30 `eligibilityRequirements` for the scheme detail page. Each item can be an English string or a translation object with `en` required. The profile matcher uses reviewed rules defined in the application.

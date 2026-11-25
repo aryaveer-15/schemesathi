@@ -35,12 +35,25 @@ test('one authenticated questionnaire returns matches, exclusions and missing de
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   const { results } = await response.json();
-  assert.equal(results.length, 10);
+  assert.equal(results.length, 11);
   const bySlug = Object.fromEntries(results.map((result) => [result.slug, result]));
   assert.equal(bySlug['atal-pension-yojana'].status, 'matched');
   assert.equal(bySlug['pm-ujjwala-yojana'].status, 'unmatched');
   assert.equal(bySlug['ayushman-bharat-pmjay'].status, 'review');
   assert.deepEqual(bySlug['ayushman-bharat-pmjay'].checks, [{ key: 'beneficiary', status: 'unanswered' }]);
+});
+
+test('rooftop solar uses shared citizenship and reviews missing or exceptional details', async () => {
+  const profile = { citizen: 'yes', solarRoof: 'yes', solarConnection: 'yes', solarSubsidy: 'no' };
+  async function matchSolar(details) {
+    const response = await post('/eligibility/matches', { profile: details });
+    assert.equal(response.status, 200);
+    return (await response.json()).results.find(({ slug }) => slug === 'pm-surya-ghar');
+  }
+  assert.equal((await matchSolar(profile)).status, 'matched');
+  assert.equal((await matchSolar({ citizen: 'yes' })).status, 'review');
+  assert.equal((await matchSolar({ ...profile, solarSubsidy: 'yes' })).status, 'review');
+  assert.equal((await matchSolar({ ...profile, solarConnection: 'no' })).status, 'unmatched');
 });
 
 test('shared profile applies to multiple schemes and reviews age boundaries', async () => {

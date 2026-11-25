@@ -49,6 +49,10 @@ function normalizeImport({ sourceUrl, schemes } = {}) {
       }
       const state = scheme.level === 'state' ? requiredText(scheme.state, 100) : 'All India';
       if (scheme.level === 'state' && state.toLowerCase() === 'all india') throw new Error('state is required');
+      const requirements = scheme.eligibilityRequirements;
+      if (requirements !== undefined && (!Array.isArray(requirements) || requirements.length > 30)) {
+        throw new Error('expected up to 30 eligibility requirements');
+      }
       seen.add(slug);
       return {
         slug, state, sourceDataset,
@@ -56,6 +60,7 @@ function normalizeImport({ sourceUrl, schemes } = {}) {
         title: translations(scheme.title, 250),
         summary: translations(scheme.summary, 1500),
         sourceUrl: httpsUrl(scheme.sourceUrl),
+        ...(requirements?.length && { eligibilityRequirements: requirements.map((item) => translations(item, 600)) }),
       };
     } catch (error) {
       throw new Error(`Row ${index + 1}: ${error.message}`);

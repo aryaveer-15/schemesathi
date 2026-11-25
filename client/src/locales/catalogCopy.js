@@ -1,5 +1,11 @@
 export default {
   en: {
+    eligibilityRequirements: "Who may qualify",
+    eligibilitySource: "Read the official criteria",
+    solarScheme: "PM Surya Ghar rooftop solar",
+    solarRoof: "Do you own a home with a roof suitable for solar panels?",
+    solarConnection: "Does the home have a residential grid connection with the local electricity distributor?",
+    solarSubsidy: "Has your household already received a solar panel subsidy?",
     profileDetails: "About you",
     profileAge: "Age in completed years",
     profileIncome: "Annual household income (₹)",
@@ -17,6 +23,12 @@ export default {
     moreSchemes: "Show more schemes",
   },
   hi: {
+    eligibilityRequirements: "कौन पात्र हो सकता है",
+    eligibilitySource: "आधिकारिक पात्रता शर्तें पढ़ें",
+    solarScheme: "पीएम सूर्य घर रूफटॉप सोलर",
+    solarRoof: "क्या आपके अपने घर की छत सौर पैनल लगाने के लिए उपयुक्त है?",
+    solarConnection: "क्या घर में स्थानीय बिजली वितरण कंपनी का घरेलू ग्रिड कनेक्शन है?",
+    solarSubsidy: "क्या आपके परिवार को पहले सौर पैनल की सब्सिडी मिली है?",
     profileDetails: "आपके बारे में",
     profileAge: "पूरे वर्षों में उम्र",
     profileIncome: "परिवार की वार्षिक आय (₹)",

@@ -92,6 +92,13 @@ const additions = [
     summary: { en: "Support for eligible households to install rooftop solar systems.", hi: "पात्र परिवारों को छत पर सौर ऊर्जा प्रणाली लगाने में सहायता।", kn: "ಅರ್ಹ ಕುಟುಂಬಗಳಿಗೆ ಮೇಲ್ಛಾವಣಿ ಸೌರ ವ್ಯವಸ್ಥೆ ಅಳವಡಿಸಲು ನೆರವು." },
     category: "energy",
     sourceUrl: "https://pmsuryaghar.gov.in/",
+    eligibilitySourceUrl: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2010674&lang=2&reg=3",
+    eligibilityRequirements: [
+      { en: "Applicants must be Indian citizens.", hi: "आवेदक भारतीय नागरिक होने चाहिए।" },
+      { en: "Households applying for their own rooftop installation should have a home with a suitable roof.", hi: "अपने घर पर सौर पैनल लगवाने के लिए घर की छत उपयुक्त होनी चाहिए।" },
+      { en: "The home needs a valid residential grid connection with the local electricity distributor.", hi: "घर में स्थानीय बिजली वितरण कंपनी का वैध घरेलू कनेक्शन होना चाहिए।" },
+      { en: "Households generally must not have received a solar panel subsidy before. Check the official portal for exceptions and society applications.", hi: "परिवार ने आम तौर पर पहले सौर पैनल की सब्सिडी नहीं ली होनी चाहिए। अपवादों और सोसाइटी के आवेदनों के लिए आधिकारिक पोर्टल देखें।" },
+    ],
   },
   {
     slug: "pm-vishwakarma",
@@ -148,4 +155,4 @@ const additions = [
   },
 ];
 
-module.exports = [...schemes, ...additions];
+module.exports = [...schemes, ...additions, ...require('./additionalCatalog')];

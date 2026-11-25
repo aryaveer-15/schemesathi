@@ -11,7 +11,9 @@ const options = ['yes', 'no', 'unknown'];
 const profileLabels = {
   age: 'profileAge', income: 'profileIncome', area: 'profileArea',
   savings: 'profileSavings', autoDebit: 'profileDebit',
+  solarRoof: 'solarRoof', solarConnection: 'solarConnection', solarSubsidy: 'solarSubsidy',
 };
+const solarFields = ['solarRoof', 'solarConnection', 'solarSubsidy'];
 
 export default function FindSchemes() {
   const { token, signOut } = useAuth();
@@ -22,6 +24,9 @@ export default function FindSchemes() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const local = (key, values) => eligibilityText(lang, key, values);
+  const profileLabel = (key) => key === 'citizen'
+    ? local(key, schemeQuestions['atal-pension-yojana'].questions.citizen)
+    : t(profileLabels[key]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -100,7 +105,7 @@ export default function FindSchemes() {
             </label>
             {['citizen', 'savings', 'autoDebit'].map((key) => (
               <label key={key}>
-                {key === 'citizen' ? local(key, schemeQuestions['atal-pension-yojana'].questions.citizen) : t(profileLabels[key])}
+                {profileLabel(key)}
                 <select name={key} value={profile[key] ?? ''} onChange={updateProfile}>
                   <option value="">{t('skipQuestion')}</option>
                   {options.map((answer) => <option key={answer} value={answer}>{local(answer)}</option>)}
@@ -108,6 +113,18 @@ export default function FindSchemes() {
               </label>
             ))}
           </section>
+          <details className="card match-section">
+            <summary>{t('solarScheme')}</summary>
+            {solarFields.map((key) => (
+              <label key={key}>
+                {profileLabel(key)}
+                <select name={key} value={profile[key] ?? ''} onChange={updateProfile}>
+                  <option value="">{t('skipQuestion')}</option>
+                  {options.map((answer) => <option key={answer} value={answer}>{local(answer)}</option>)}
+                </select>
+              </label>
+            ))}
+          </details>
           {Object.entries(schemeQuestions).map(([slug, { questions }]) => {
             const scope = schemeScope(lang, slug);
             const remaining = Object.entries(questions).filter(([key]) => !answeredByProfile[key]);
@@ -145,10 +162,10 @@ export default function FindSchemes() {
                     <details key={slug} className="card match-section">
                       <summary>{title ? localizedScheme({ slug, title }, 'title', lang) : schemeTitle(lang, slug)}</summary>
                       <ul>{checks.map(({ key, status: check, range }) => {
-                        const answer = title ? profile[key] : results.answers[key];
+                        const answer = title ? (profile[key] ?? results.answers[key]) : results.answers[key];
                         return (
                           <li key={key}>
-                            {title ? t(profileLabels[key]) : local(key, schemeQuestions[slug].questions[key])}{' '}
+                            {title ? profileLabel(key) : local(key, schemeQuestions[slug].questions[key])}{' '}
                             {range && <bdi>({range.join('–')})</bdi>}{' '}
                             <strong>{check === 'unanswered' ? t('skipQuestion') : typeof answer === 'number'
                               ? new Intl.NumberFormat(lang).format(answer) : local(answer)}</strong>{' '}

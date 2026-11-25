@@ -47,6 +47,17 @@ function SchemeDetailsContent({ id }) {
             {scheme.state && <span>{scheme.state === 'All India' ? t('allIndia') : scheme.state}</span>}
           </p>
           <p>{localizedScheme(scheme, 'summary', lang)}</p>
+          {scheme.eligibilityRequirements?.length > 0 && (
+            <section aria-labelledby="scheme-requirements">
+              <h2 id="scheme-requirements">{t('eligibilityRequirements')}</h2>
+              <ul>{scheme.eligibilityRequirements.map((requirement, index) => (
+                <li key={index}>{requirement[lang] ?? requirement.en}</li>
+              ))}</ul>
+              {/^https:\/\//i.test(scheme.eligibilitySourceUrl ?? '') && (
+                <p><a href={scheme.eligibilitySourceUrl} target="_blank" rel="noreferrer">{t('eligibilitySource')}</a></p>
+              )}
+            </section>
+          )}
           {hasForm && (
             <p><Link to={`/eligibility?scheme=${encodeURIComponent(scheme.slug)}`}>{t('eligibility')}</Link></p>
           )}

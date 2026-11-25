@@ -11,6 +11,9 @@ const fields = {
   citizen: (value) => options.includes(value),
   savings: (value) => options.includes(value),
   autoDebit: (value) => options.includes(value),
+  solarRoof: (value) => options.includes(value),
+  solarConnection: (value) => options.includes(value),
+  solarSubsidy: (value) => options.includes(value),
 };
 
 const rules = {
@@ -23,6 +26,12 @@ const rules = {
     age: { min: 18, max: 70, reviewFrom: 69 },
     savings: { equals: 'yes' },
     autoDebit: { equals: 'yes' },
+  },
+  'pm-surya-ghar': {
+    citizen: { equals: 'yes' },
+    solarRoof: { equals: 'yes', reviewWhenDifferent: true },
+    solarConnection: { equals: 'yes' },
+    solarSubsidy: { equals: 'no', reviewWhenDifferent: true },
   },
 };
 
@@ -49,7 +58,10 @@ function checkField(profile, field, rule) {
   const value = profile[field];
   if (value === undefined) return 'unanswered';
   if (value === 'unknown') return 'review';
-  if ('equals' in rule) return value === rule.equals ? 'matched' : 'unmatched';
+  if ('equals' in rule) {
+    if (value === rule.equals) return 'matched';
+    return rule.reviewWhenDifferent ? 'review' : 'unmatched';
+  }
   if (value < rule.min || value > rule.max) return 'unmatched';
   return value >= rule.reviewFrom ? 'review' : 'matched';
 }

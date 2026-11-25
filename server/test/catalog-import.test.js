@@ -12,6 +12,7 @@ const sample = {
   category: 'education',
   level: 'state',
   state: 'Odisha',
+  eligibilityRequirements: ['Applicants must live in Odisha.'],
 };
 
 test('catalog import supports a national-size feed and preserves available languages', async () => {
@@ -23,6 +24,7 @@ test('catalog import supports a national-size feed and preserves available langu
   const scheme = new Scheme(catalog[0]);
   await scheme.validate();
   assert.equal(scheme.title.bn, sample.title.bn);
+  assert.equal(scheme.eligibilityRequirements[0].en, sample.eligibilityRequirements[0]);
 });
 
 test('catalog import rejects invalid URLs, duplicate or maintained slugs, and unsourced rules', () => {
@@ -33,4 +35,5 @@ test('catalog import rejects invalid URLs, duplicate or maintained slugs, and un
   assert.throws(() => normalize({ ...sample, eligibilityRules: {} }), /cannot assign/);
   assert.throws(() => normalize({ ...sample, title: { bn: 'প্রশিক্ষণ' } }), /English text/);
   assert.throws(() => normalize({ ...sample, state: '' }), /missing text/);
+  assert.throws(() => normalize({ ...sample, eligibilityRequirements: 'Odisha residents' }), /eligibility requirements/);
 });
