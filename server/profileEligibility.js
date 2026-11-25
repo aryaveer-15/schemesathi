@@ -40,6 +40,25 @@ const fields = {
   pragatiStudent: yesNo,
   pragatiFamily: yesNo,
   sakshamDisability: yesNo,
+  tbTreatment: yesNo,
+  tbNotification: yesNo,
+  dialysisReferral: yesNo,
+  dialysisBpl: yesNo,
+  shaktiResident: yesNo,
+  shaktiPassenger: yesNo,
+  shaktiService: yesNo,
+  educationLoanAdmission: yesNo,
+  artisanTrade: yesNo,
+  artisanFamilyExclusion: yesNo,
+  artisanCreditExclusion: yesNo,
+  cropInterest: yesNo,
+  cropNotification: yesNo,
+  ruralHousingList: yesNo,
+  streetVendor: yesNo,
+  vendorCredentials: yesNo,
+  kccActivity: yesNo,
+  missedVaccination: yesNo,
+  vaccinationRound: yesNo,
 };
 
 const freshTechnicalScholarship = {
@@ -114,6 +133,47 @@ const rules = {
   'aicte-saksham': {
     ...freshTechnicalScholarship,
     sakshamDisability: { equals: 'yes' },
+  },
+  'nikshay-poshan': {
+    tbTreatment: { equals: 'yes' },
+    tbNotification: { equals: 'yes', reviewWhenDifferent: true },
+  },
+  'pm-national-dialysis': {
+    dialysisReferral: { equals: 'yes' },
+    dialysisBpl: { equals: 'yes', reviewWhenDifferent: true },
+  },
+  'ka-shakti': {
+    shaktiResident: { equals: 'yes' },
+    shaktiPassenger: { equals: 'yes' },
+    shaktiService: { equals: 'yes' },
+  },
+  'pm-vidyalaxmi': {
+    educationLoanAdmission: { equals: 'yes' },
+  },
+  'pm-vishwakarma': {
+    age: { min: 18 },
+    citizen: { equals: 'yes' },
+    artisanTrade: { equals: 'yes' },
+    artisanFamilyExclusion: { equals: 'no' },
+    artisanCreditExclusion: { equals: 'no', reviewWhenDifferent: true },
+  },
+  'pm-fasal-bima': {
+    cropInterest: { equals: 'yes' },
+    cropNotification: { equals: 'yes' },
+  },
+  'pm-awas-gramin': {
+    ruralHousingList: { equals: 'yes', reviewWhenDifferent: true },
+  },
+  'pm-svanidhi': {
+    streetVendor: { equals: 'yes' },
+    vendorCredentials: { equals: 'yes', reviewWhenDifferent: true },
+  },
+  'kisan-credit-card': {
+    kccActivity: { equals: 'yes' },
+  },
+  'mission-indradhanush': {
+    missedVaccination: { equals: 'yes' },
+    vaccinationRound: { equals: 'yes', reviewWhenDifferent: true },
   },
 };
 

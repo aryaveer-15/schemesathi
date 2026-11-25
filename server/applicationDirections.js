@@ -73,4 +73,45 @@ module.exports = {
     url: 'https://scholarships.gov.in/All-Scholarships',
     online: 'Choose AICTE Saksham and the degree or diploma option on the National Scholarship Portal. Check the application window and keep your disability and family income certificates ready for verification.',
   },
+  'nikshay-poshan': {
+    visit: 'Ask your treating TB centre or district TB office about Ni-kshay Poshan. Have the facility verify your Ni-kshay registration and payment details.',
+    verification: 'Ask your treating facility or district TB office whether your case has been notified in Ni-kshay.',
+  },
+  'pm-national-dialysis': {
+    visit: 'Contact your district hospital’s dialysis unit. Take your clinician’s referral and any proof of BPL status so the unit can confirm free coverage and arrange an appointment.',
+    verification: 'Ask the district hospital’s dialysis unit which documents it accepts for free dialysis and whether your state offers additional coverage.',
+  },
+  'ka-shakti': {
+    visit: 'Board an eligible Karnataka state transport bus and show the conductor accepted Karnataka residence proof to get a zero-fare ticket. Check with the operator if you are unsure about the route or bus type.',
+  },
+  'pm-vidyalaxmi': {
+    url: 'https://pmvidyalaxmi.co.in/',
+    online: 'Apply for an education loan through the PM-Vidyalaxmi portal with your admission details. Check the separate income and other conditions for interest support.',
+  },
+  'pm-vishwakarma': {
+    visit: 'Visit a Common Service Centre and ask to register for PM Vishwakarma. The operator can explain the required Aadhaar authentication, documents and local verification.',
+    verification: 'Ask the Common Service Centre whether your prior loan is covered by the restriction or by the exception for fully repaid MUDRA and PM SVANidhi loans.',
+  },
+  'pm-fasal-bima': {
+    url: 'https://pmfby.gov.in/',
+    online: 'Use the PMFBY farmer enrolment service. Confirm your notified crop, location, closing date and state-required cultivation documents before submitting.',
+    visit: 'You can also ask a participating bank branch or Common Service Centre to assist with enrolment.',
+  },
+  'pm-awas-gramin': {
+    visit: 'Visit your Gram Panchayat or block rural development office with the household’s listing details. Ask them to verify your place on the approved list and explain the sanction and documentation process.',
+    verification: 'Ask your Gram Panchayat or block rural development office to check the official PMAY-G list and explain any survey or correction process available in your village.',
+  },
+  'pm-svanidhi': {
+    url: 'https://pmsvanidhi.mohua.gov.in/',
+    online: 'Apply for the relevant loan tranche through the PM SVANidhi portal with your vending documentation. The lender verifies the application.',
+    visit: 'Your Urban Local Body can also help you apply.',
+    verification: 'Ask the Urban Local Body that covers your vending location to check local coverage and how to obtain or update a Certificate of Vending or Letter of Recommendation.',
+  },
+  'kisan-credit-card': {
+    visit: 'Ask a participating bank, rural bank or cooperative credit institution for a Kisan Credit Card application. Bring the records it requires for your cultivation or allied activity.',
+  },
+  'mission-indradhanush': {
+    visit: 'Contact your ASHA worker, ANM or nearest public health centre to confirm the next catch-up vaccination session. Take any available vaccination card.',
+    verification: 'Ask your ASHA worker, ANM or public health centre which doses are due and whether the current local round covers the child or pregnant person.',
+  },
 };

@@ -21,6 +21,13 @@ const profileLabels = {
   csssMerit: 'csssMerit', csssCourse: 'csssCourse', csssIncome: 'csssIncome', csssOtherAid: 'csssOtherAid',
   aicteCourse: 'aicteCourse', aicteIncome: 'aicteIncome', aicteOtherAid: 'aicteOtherAid',
   pragatiStudent: 'pragatiStudent', pragatiFamily: 'pragatiFamily', sakshamDisability: 'sakshamDisability',
+  tbTreatment: 'tbTreatment', tbNotification: 'tbNotification', dialysisReferral: 'dialysisReferral', dialysisBpl: 'dialysisBpl',
+  shaktiResident: 'shaktiResident', shaktiPassenger: 'shaktiPassenger', shaktiService: 'shaktiService',
+  educationLoanAdmission: 'educationLoanAdmission', artisanTrade: 'artisanTrade',
+  artisanFamilyExclusion: 'artisanFamilyExclusion', artisanCreditExclusion: 'artisanCreditExclusion',
+  cropInterest: 'cropInterest', cropNotification: 'cropNotification', ruralHousingList: 'ruralHousingList',
+  streetVendor: 'streetVendor', vendorCredentials: 'vendorCredentials', kccActivity: 'kccActivity',
+  missedVaccination: 'missedVaccination', vaccinationRound: 'vaccinationRound',
 };
 const profileSections = [
   { title: 'solarScheme', fields: ['solarRoof', 'solarConnection', 'solarSubsidy'] },
@@ -36,6 +43,17 @@ const profileSections = [
   { title: 'jsskScheme', fields: ['jsskCare', 'publicFacility'] },
   { title: 'csssScheme', fields: ['csssMerit', 'csssCourse', 'csssIncome', 'csssOtherAid'] },
   { title: 'aicteSchemes', fields: ['aicteCourse', 'aicteIncome', 'aicteOtherAid', 'pragatiStudent', 'pragatiFamily', 'sakshamDisability'] },
+  { title: 'tbScheme', fields: ['tbTreatment', 'tbNotification'] },
+  { title: 'dialysisScheme', fields: ['dialysisReferral', 'dialysisBpl'] },
+  { title: 'shaktiScheme', fields: ['shaktiResident', 'shaktiPassenger', 'shaktiService'] },
+  { title: 'educationLoanScheme', fields: ['educationLoanAdmission'] },
+  { title: 'artisanScheme', fields: ['artisanTrade', 'artisanFamilyExclusion', 'artisanCreditExclusion'],
+    sourceUrl: 'https://www.pib.gov.in/PressNoteDetails.aspx?ModuleId=3&NoteId=159998&id=159998&lang=1&reg=3' },
+  { title: 'cropInsuranceScheme', fields: ['cropInterest', 'cropNotification'] },
+  { title: 'ruralHousingScheme', fields: ['ruralHousingList'] },
+  { title: 'streetVendorScheme', fields: ['streetVendor', 'vendorCredentials'] },
+  { title: 'kccScheme', fields: ['kccActivity'] },
+  { title: 'vaccinationScheme', fields: ['missedVaccination', 'vaccinationRound'] },
 ];
 
 export default function FindSchemes() {
@@ -192,7 +210,7 @@ export default function FindSchemes() {
               return (
                 <section className="match-results-group" data-result={status} key={status}>
                   <h2>{local(status)}</h2>
-                  {schemes.map(({ slug, title, checks, sourceUrl, application }) => (
+                  {schemes.map(({ slug, title, checks, sourceUrl, application, verification }) => (
                     <article key={slug} className="card match-result-card">
                       <details className="match-section">
                         <summary>{title ? localizedScheme({ slug, title }, 'title', lang) : schemeTitle(lang, slug)}</summary>
@@ -213,6 +231,10 @@ export default function FindSchemes() {
                         {!title && <Link to={`/eligibility?scheme=${encodeURIComponent(slug)}`}>{t('eligibility')}</Link>}
                       </details>
                       <ApplicationDirections application={application} />
+                      {verification && <div className="application-directions">
+                        <strong>{t('howToVerifyScheme')}</strong>
+                        <p>{verification}</p>
+                      </div>}
                     </article>
                   ))}
                 </section>

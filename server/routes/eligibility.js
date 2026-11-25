@@ -98,7 +98,13 @@ function evaluate(answers, { criteria, sourceUrl, reviewCriteria = [] }) {
 }
 
 function withNextSteps(slug, result) {
-  return result.status === 'matched' ? { ...result, application: applicationDirections[slug] } : result;
+  const application = applicationDirections[slug];
+  if (result.status === 'matched') return { ...result, application };
+  if (result.status === 'review' && application?.verification
+    && result.checks.some((check) => check.status !== 'unanswered')) {
+    return { ...result, verification: application.verification };
+  }
+  return result;
 }
 
 router.post('/matches', requireAuth, (req, res) => {

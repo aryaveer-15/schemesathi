@@ -127,7 +127,7 @@ test('registration opens the match questionnaire', async ({ page }) => {
     expect(route.request().headers().authorization).toBe('Bearer demo-token');
     expect(route.request().postDataJSON()).toEqual({
       answers: {},
-      profile: { citizen: 'yes', solarConnection: 'yes', minorAge: 12 },
+      profile: { citizen: 'yes', solarConnection: 'yes', minorAge: 12, ruralHousingList: 'unknown' },
     });
     await route.fulfill({ json: {
       results: [{
@@ -141,6 +141,13 @@ test('registration opens the match questionnaire', async ({ page }) => {
         status: 'review',
         checks: [{ key: 'citizen', status: 'matched' }, { key: 'solarConnection', status: 'matched' }],
         sourceUrl: 'https://pmsuryaghar.gov.in/',
+      }, {
+        slug: 'pm-awas-gramin',
+        title: { en: 'PMAY Gramin' },
+        status: 'review',
+        checks: [{ key: 'ruralHousingList', status: 'review' }],
+        sourceUrl: 'https://pmayg.dord.gov.in/',
+        verification: 'Ask your Gram Panchayat to check the beneficiary list.',
       }, {
         slug: 'pmjjby',
         title: { en: 'PMJJBY' },
@@ -163,8 +170,11 @@ test('registration opens the match questionnaire', async ({ page }) => {
   await page.getByLabel('Does the home have a residential grid connection with the local electricity distributor?').selectOption('yes');
   await page.getByText('NPS Vatsalya and child health screening', { exact: true }).click();
   await page.getByLabel('Age of the child being checked, in completed years').fill('12');
+  await page.getByText('PMAY Gramin rural housing', { exact: true }).click();
+  await page.getByLabel(/confirmed that your household is on the approved PMAY-G/).selectOption('unknown');
   await page.getByRole('button', { name: 'Show my matches' }).click();
   await expect(page.getByRole('heading', { name: 'Needs verification' })).toBeVisible();
+  await expect(page.getByText('Ask your Gram Panchayat to check the beneficiary list.')).toBeVisible();
   await expect(page.getByText('Ask your participating bank or post office for the enrolment form.')).toBeVisible();
   await page.getByText('PM Surya Ghar', { exact: true }).click();
   await expect(page.getByRole('link', { name: 'Read the official criteria' }).last()).toHaveAttribute('href', 'https://pmsuryaghar.gov.in/');

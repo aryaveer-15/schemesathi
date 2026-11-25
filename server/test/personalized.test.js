@@ -35,7 +35,7 @@ test('one authenticated questionnaire returns matches, exclusions and missing de
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   const { results } = await response.json();
-  assert.equal(results.length, 21);
+  assert.equal(results.length, 31);
   const bySlug = Object.fromEntries(results.map((result) => [result.slug, result]));
   assert.equal(bySlug['atal-pension-yojana'].status, 'matched');
   assert.match(bySlug['atal-pension-yojana'].application.visit, /bank or post office/);
@@ -136,4 +136,38 @@ test('the seven new checks give next steps only when the stated requirements mat
   assert.equal(changed['aicte-saksham'].status, 'unmatched');
   assert.equal((await resultsFor({ minorAge: 2 }))['rashtriya-bal-swasthya'].status, 'matched');
   assert.equal((await resultsFor({ schoolScreening: 'yes' }))['rashtriya-bal-swasthya'].status, 'review');
+});
+
+test('ten more programmes check requirements and direct users to apply or verify records', async () => {
+  const profile = {
+    age: 29, citizen: 'yes', tbTreatment: 'yes', tbNotification: 'yes',
+    dialysisReferral: 'yes', dialysisBpl: 'yes', shaktiResident: 'yes', shaktiPassenger: 'yes', shaktiService: 'yes',
+    educationLoanAdmission: 'yes', artisanTrade: 'yes', artisanFamilyExclusion: 'no', artisanCreditExclusion: 'no',
+    cropInterest: 'yes', cropNotification: 'yes', ruralHousingList: 'yes', streetVendor: 'yes', vendorCredentials: 'yes',
+    kccActivity: 'yes', missedVaccination: 'yes', vaccinationRound: 'yes',
+  };
+  async function resultsFor(details) {
+    const response = await post('/eligibility/matches', { profile: details });
+    assert.equal(response.status, 200);
+    return Object.fromEntries((await response.json()).results.map((result) => [result.slug, result]));
+  }
+  const matches = await resultsFor(profile);
+  for (const slug of ['nikshay-poshan', 'pm-national-dialysis', 'ka-shakti', 'pm-vidyalaxmi', 'pm-vishwakarma',
+    'pm-fasal-bima', 'pm-awas-gramin', 'pm-svanidhi', 'kisan-credit-card', 'mission-indradhanush']) {
+    assert.equal(matches[slug].status, 'matched', slug);
+    assert.ok(matches[slug].application?.online || matches[slug].application?.visit, slug);
+  }
+  const incomplete = await resultsFor({
+    ...profile, age: 17, shaktiResident: 'no', cropNotification: 'no',
+    ruralHousingList: 'unknown', vendorCredentials: 'no', tbNotification: 'no', vaccinationRound: 'unknown',
+  });
+  for (const slug of ['pm-awas-gramin', 'pm-svanidhi', 'nikshay-poshan', 'mission-indradhanush']) {
+    assert.equal(incomplete[slug].status, 'review', slug);
+    assert.equal(incomplete[slug].application, undefined, slug);
+    assert.ok(incomplete[slug].verification, slug);
+  }
+  for (const slug of ['pm-vishwakarma', 'ka-shakti', 'pm-fasal-bima']) {
+    assert.equal(incomplete[slug].status, 'unmatched', slug);
+    assert.equal(incomplete[slug].verification, undefined, slug);
+  }
 });
