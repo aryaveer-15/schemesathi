@@ -13,8 +13,19 @@ const profileLabels = {
   age: 'profileAge', income: 'profileIncome', area: 'profileArea',
   savings: 'profileSavings', autoDebit: 'profileDebit',
   solarRoof: 'solarRoof', solarConnection: 'solarConnection', solarSubsidy: 'solarSubsidy',
+  bankAccount: 'bankAccount', informalWork: 'informalWork', workerIncomeLimit: 'workerIncomeLimit',
+  workerExclusion: 'workerExclusion', smallFarmRecord: 'smallFarmRecord', farmerPensionExclusion: 'farmerPensionExclusion',
 };
-const solarFields = ['solarRoof', 'solarConnection', 'solarSubsidy'];
+const profileSections = [
+  { title: 'solarScheme', fields: ['solarRoof', 'solarConnection', 'solarSubsidy'] },
+  { title: 'janDhanScheme', fields: ['bankAccount'] },
+  { title: 'workerPensionScheme', fields: ['informalWork', 'workerIncomeLimit', 'workerExclusion'] },
+  {
+    title: 'farmerPensionScheme',
+    fields: ['smallFarmRecord', 'farmerPensionExclusion'],
+    sourceUrl: 'https://www.pib.gov.in/PressNoteDetails.aspx?ModuleId=3&NoteId=159959&lang=1&reg=48',
+  },
+];
 
 export default function FindSchemes() {
   const { token, signOut } = useAuth();
@@ -114,18 +125,24 @@ export default function FindSchemes() {
               </label>
             ))}
           </section>
-          <details className="card match-section">
-            <summary>{t('solarScheme')}</summary>
-            {solarFields.map((key) => (
-              <label key={key}>
-                {profileLabel(key)}
-                <select name={key} value={profile[key] ?? ''} onChange={updateProfile}>
-                  <option value="">{t('skipQuestion')}</option>
-                  {options.map((answer) => <option key={answer} value={answer}>{local(answer)}</option>)}
-                </select>
-              </label>
-            ))}
-          </details>
+          {profileSections.map(({ title, fields, sourceUrl }) => {
+            if (title === 'janDhanScheme' && profile.savings === 'yes') return null;
+            return (
+              <details className="card match-section" key={title}>
+                <summary>{t(title)}</summary>
+                {sourceUrl && <p><a href={sourceUrl} target="_blank" rel="noreferrer">{t('eligibilitySource')}</a></p>}
+                {fields.map((key) => (
+                  <label key={key}>
+                    {profileLabel(key)}
+                    <select name={key} value={profile[key] ?? ''} onChange={updateProfile}>
+                      <option value="">{t('skipQuestion')}</option>
+                      {options.map((answer) => <option key={answer} value={answer}>{local(answer)}</option>)}
+                    </select>
+                  </label>
+                ))}
+              </details>
+            );
+          })}
           {Object.entries(schemeQuestions).map(([slug, { questions }]) => {
             const scope = schemeScope(lang, slug);
             const remaining = Object.entries(questions).filter(([key]) => !answeredByProfile[key]);
@@ -165,12 +182,13 @@ export default function FindSchemes() {
                         <summary>{title ? localizedScheme({ slug, title }, 'title', lang) : schemeTitle(lang, slug)}</summary>
                         <ul>{checks.map(({ key, status: check, range }) => {
                           const answer = title ? (profile[key] ?? results.answers[key]) : results.answers[key];
+                          const displayedAnswer = key === 'bankAccount' && profile.savings === 'yes' ? 'yes' : answer;
                           return (
                             <li key={key}>
                               {title ? profileLabel(key) : local(key, schemeQuestions[slug].questions[key])}{' '}
                               {range && <bdi>({range.join('–')})</bdi>}{' '}
-                              <strong>{check === 'unanswered' ? t('skipQuestion') : typeof answer === 'number'
-                                ? new Intl.NumberFormat(lang).format(answer) : local(answer)}</strong>{' '}
+                              <strong>{check === 'unanswered' ? t('skipQuestion') : typeof displayedAnswer === 'number'
+                                ? new Intl.NumberFormat(lang).format(displayedAnswer) : local(displayedAnswer)}</strong>{' '}
                               {check !== 'unanswered' && local(check === 'matched' ? 'matchedCheck' : check)}
                             </li>
                           );

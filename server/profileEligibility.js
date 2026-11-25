@@ -14,6 +14,12 @@ const fields = {
   solarRoof: (value) => options.includes(value),
   solarConnection: (value) => options.includes(value),
   solarSubsidy: (value) => options.includes(value),
+  bankAccount: (value) => options.includes(value),
+  informalWork: (value) => options.includes(value),
+  workerIncomeLimit: (value) => options.includes(value),
+  workerExclusion: (value) => options.includes(value),
+  smallFarmRecord: (value) => options.includes(value),
+  farmerPensionExclusion: (value) => options.includes(value),
 };
 
 const rules = {
@@ -32,6 +38,21 @@ const rules = {
     solarRoof: { equals: 'yes', reviewWhenDifferent: true },
     solarConnection: { equals: 'yes' },
     solarSubsidy: { equals: 'no', reviewWhenDifferent: true },
+  },
+  pmjdy: {
+    age: { min: 18, reviewBelow: true },
+    bankAccount: { equals: 'no' },
+  },
+  'pm-shram-yogi-maandhan': {
+    age: { min: 18, max: 40 },
+    informalWork: { equals: 'yes' },
+    workerIncomeLimit: { equals: 'yes' },
+    workerExclusion: { equals: 'no' },
+  },
+  'pm-kisan-maandhan': {
+    age: { min: 18, max: 40 },
+    smallFarmRecord: { equals: 'yes' },
+    farmerPensionExclusion: { equals: 'no' },
   },
 };
 
@@ -62,8 +83,9 @@ function checkField(profile, field, rule) {
     if (value === rule.equals) return 'matched';
     return rule.reviewWhenDifferent ? 'review' : 'unmatched';
   }
-  if (value < rule.min || value > rule.max) return 'unmatched';
-  return value >= rule.reviewFrom ? 'review' : 'matched';
+  if (value < rule.min) return rule.reviewBelow ? 'review' : 'unmatched';
+  if (rule.max !== undefined && value > rule.max) return 'unmatched';
+  return rule.reviewFrom !== undefined && value >= rule.reviewFrom ? 'review' : 'matched';
 }
 
 function outcome(checks) {
@@ -75,7 +97,7 @@ function outcome(checks) {
 function evaluateProfile(profile, criteria) {
   const checks = Object.entries(criteria).map(([key, rule]) => ({
     key, status: checkField(profile, key, rule),
-    ...(key === 'age' && { range: [rule.min, rule.max] }),
+    ...(key === 'age' && rule.max !== undefined && { range: [rule.min, rule.max] }),
   }));
   return { status: outcome(checks), checks };
 }

@@ -40,4 +40,13 @@ module.exports = {
     url: 'https://www.pmsuryaghar.gov.in/',
     online: 'Register on the national portal with your electricity connection details. Follow the portal’s steps for your local electricity distributor before choosing an installation vendor.',
   },
+  pmjdy: {
+    visit: 'Go to a bank branch or Bank Mitra outlet and ask to open a Jan-Dhan basic savings account. Ask what identity and address documents they accept.',
+  },
+  'pm-shram-yogi-maandhan': {
+    visit: 'Visit a Common Service Centre and ask to enrol in PM-SYM. Bring your Aadhaar and savings or Jan-Dhan account details. The centre can explain the contribution and auto-debit process.',
+  },
+  'pm-kisan-maandhan': {
+    visit: 'Visit a Common Service Centre and ask to enrol in PM-KMY. Bring your Aadhaar, bank account details and mobile phone. Ask the operator how your state verifies land records.',
+  },
 };

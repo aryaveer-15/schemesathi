@@ -32,14 +32,14 @@ const entries = [
     title: 'Pradhan Mantri Shram Yogi Maandhan (PM-SYM)',
     summary: 'A contributory pension for workers in the unorganised sector.',
     requirements: ['Entry is generally for unorganised workers aged 18–40 with monthly income of ₹15,000 or less. Income-tax and other social-security coverage exclusions apply.'],
-    sourceUrl: 'https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2108082&lang=2&reg=48',
+    sourceUrl: 'https://www.labour.gov.in/offerings/schemes-and-services/details/pm-sym-QTOzATMtQWa',
   },
   {
     slug: 'pm-kisan-maandhan', category: 'social-security',
     title: 'Pradhan Mantri Kisan Maan-Dhan Yojana (PM-KMY)',
     summary: 'A contributory pension for small and marginal farmers.',
     requirements: ['The scheme generally covers farmers joining at ages 18–40 with cultivable landholdings of up to two hectares, subject to land records and scheme exclusions.'],
-    sourceUrl: 'https://pmkisan.gov.in/Documents/PMKMYFAQs.pdf',
+    sourceUrl: 'https://www.pib.gov.in/PressNoteDetails.aspx?ModuleId=3&NoteId=159959&lang=1&reg=48',
   },
   {
     slug: 'nps-traders', category: 'social-security',

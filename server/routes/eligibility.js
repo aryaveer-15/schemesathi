@@ -109,7 +109,11 @@ router.post('/matches', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Provide at least one recognized answer' });
   }
   const effectiveAnswers = { ...answers, ...fromProfile(profile) };
-  const effectiveProfile = effectiveAnswers.citizen ? { ...profile, citizen: effectiveAnswers.citizen } : profile;
+  const effectiveProfile = {
+    ...profile,
+    citizen: effectiveAnswers.citizen,
+    bankAccount: profile.savings === 'yes' ? 'yes' : profile.bankAccount,
+  };
   const results = Object.entries(schemes).map(([slug, rule]) => ({
     slug, ...withNextSteps(slug, evaluate(effectiveAnswers, rule)),
   }));

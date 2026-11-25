@@ -77,7 +77,8 @@ const additions = [
     title: { en: "Pradhan Mantri Jan Dhan Yojana (PMJDY)", hi: "प्रधानमंत्री जन धन योजना", kn: "ಪ್ರಧಾನ ಮಂತ್ರಿ ಜನ ಧನ್ ಯೋಜನೆ" },
     summary: { en: "Financial inclusion programme that helps people access basic banking services.", hi: "बुनियादी बैंकिंग सेवाओं तक पहुँच देने वाला वित्तीय समावेशन कार्यक्रम।", kn: "ಮೂಲ ಬ್ಯಾಂಕಿಂಗ್ ಸೇವೆಗಳನ್ನು ಪಡೆಯಲು ನೆರವಾಗುವ ಹಣಕಾಸು ಒಳಗೊಳ್ಳುವಿಕೆ ಕಾರ್ಯಕ್ರಮ." },
     category: "finance",
-    sourceUrl: "https://www.pmjdy.gov.in/",
+    sourceUrl: "https://www.pmjdy.gov.in/scheme-detail.aspx",
+    eligibilityRequirements: [{ en: "The basic Jan-Dhan account is intended for someone without another bank account. Ask the bank about documentation and accounts for minors." }],
   },
   {
     slug: "pm-awas-gramin",

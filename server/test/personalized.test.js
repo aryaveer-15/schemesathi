@@ -35,7 +35,7 @@ test('one authenticated questionnaire returns matches, exclusions and missing de
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   const { results } = await response.json();
-  assert.equal(results.length, 11);
+  assert.equal(results.length, 14);
   const bySlug = Object.fromEntries(results.map((result) => [result.slug, result]));
   assert.equal(bySlug['atal-pension-yojana'].status, 'matched');
   assert.match(bySlug['atal-pension-yojana'].application.visit, /bank or post office/);
@@ -79,4 +79,30 @@ test('shared profile applies to multiple schemes and reviews age boundaries', as
   assert.equal((await accidentBoundary.json()).results.find(({ slug }) => slug === 'pmsby').status, 'review');
   assert.equal((await post('/eligibility/matches', { profile: { age: '32' } })).status, 400);
   assert.equal((await post('/eligibility/matches', { profile: { aadhaar: 'unknown' } })).status, 400);
+});
+
+test('Jan-Dhan and both Maandhan schemes evaluate shared age and give enrolment locations', async () => {
+  const profile = {
+    age: 40, bankAccount: 'no', informalWork: 'yes', workerIncomeLimit: 'yes',
+    workerExclusion: 'no', smallFarmRecord: 'yes', farmerPensionExclusion: 'no',
+  };
+  async function resultsFor(details) {
+    const response = await post('/eligibility/matches', { profile: details });
+    assert.equal(response.status, 200);
+    return Object.fromEntries((await response.json()).results.map((result) => [result.slug, result]));
+  }
+  const matches = await resultsFor(profile);
+  assert.equal(matches.pmjdy.status, 'matched');
+  assert.match(matches.pmjdy.application.visit, /Bank Mitra/);
+  for (const slug of ['pm-shram-yogi-maandhan', 'pm-kisan-maandhan']) {
+    assert.equal(matches[slug].status, 'matched');
+    assert.match(matches[slug].application.visit, /Common Service Centre/);
+  }
+  const exclusions = await resultsFor({ ...profile, savings: 'yes', workerIncomeLimit: 'no', farmerPensionExclusion: 'unknown' });
+  assert.equal(exclusions.pmjdy.status, 'unmatched');
+  assert.equal(exclusions['pm-shram-yogi-maandhan'].status, 'unmatched');
+  assert.equal(exclusions['pm-kisan-maandhan'].status, 'review');
+  assert.equal(exclusions['pm-kisan-maandhan'].application, undefined);
+  assert.equal((await resultsFor({ age: 16, bankAccount: 'no' })).pmjdy.status, 'review');
+  assert.equal((await resultsFor({ ...profile, age: 41 }))['pm-kisan-maandhan'].status, 'unmatched');
 });
