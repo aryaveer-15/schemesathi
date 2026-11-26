@@ -1,6 +1,7 @@
 const options = ['yes', 'no', 'unknown'];
 const yesNo = (value) => options.includes(value);
 const remainingEligibility = require('./remainingEligibility');
+const { fromProfile, evaluateProfile, outcome } = require('../client/src/eligibilityMatcher.mjs');
 const additionalQuestions = new Set(Object.values(remainingEligibility)
   .flatMap(({ criteria }) => Object.keys(criteria)));
 
@@ -9,7 +10,7 @@ function wholeNumber(value, min, max) {
 }
 
 const fields = {
-  age: (value) => wholeNumber(value, 0, 120),
+  age: (value) => value === 'unknown' || wholeNumber(value, 0, 120),
   income: (value) => wholeNumber(value, 0, 100_000_000),
   area: (value) => ['urban', 'rural'].includes(value),
   citizen: (value) => options.includes(value),
@@ -27,7 +28,7 @@ const fields = {
   traderWork: yesNo,
   traderTurnover: yesNo,
   traderExclusion: yesNo,
-  minorAge: (value) => wholeNumber(value, 0, 120),
+  minorAge: (value) => value === 'unknown' || wholeNumber(value, 0, 120),
   vatsalyaGuardian: yesNo,
   vatsalyaCitizenship: yesNo,
   schoolScreening: yesNo,
@@ -189,48 +190,5 @@ function validProfile(profile) {
     });
 }
 
-function fromProfile(profile) {
-  const { age, income, area, citizen, savings } = profile;
-  const answers = {};
-  if (citizen) answers.citizen = citizen;
-  // A participating account confirms the broader bank or post office question.
-  if (savings === 'yes') answers.savings = savings;
-  if (age !== undefined && age !== 40) answers.pensionAge = age >= 18 && age < 40 ? 'yes' : 'no';
-  if (age >= 60) answers.pensionCategory = 'yes';
-  if (age < 18) answers.adultWoman = 'no';
-  if (area === 'rural') answers.urban = 'no';
-  if (income !== undefined) answers.housingIncome = income <= 900_000 ? 'yes' : 'no';
-  return answers;
-}
-
-function checkField(profile, field, rule) {
-  const value = profile[field];
-  if (value === undefined) return 'unanswered';
-  if (value === 'unknown') return 'review';
-  if ('equals' in rule) {
-    if (value === rule.equals) return 'matched';
-    return rule.reviewWhenDifferent ? 'review' : 'unmatched';
-  }
-  if (value < rule.min) return rule.reviewBelow ? 'review' : 'unmatched';
-  if (rule.max !== undefined && value > rule.max) return 'unmatched';
-  return rule.reviewFrom !== undefined && value >= rule.reviewFrom ? 'review' : 'matched';
-}
-
-function outcome(checks) {
-  if (checks.some(({ status }) => status === 'unmatched')) return 'unmatched';
-  if (checks.some(({ status }) => status !== 'matched')) return 'review';
-  return 'matched';
-}
-
-function evaluateProfile(profile, criteria) {
-  const checks = Object.entries(criteria)
-    .filter(([, rule]) => rule.skipBelowAge === undefined || (profile.minorAge ?? Infinity) >= rule.skipBelowAge)
-    .map(([key, rule]) => ({
-      key, status: checkField(profile, key, rule),
-      ...(rule.question && { question: rule.question }),
-      ...(rule.min !== undefined && rule.max !== undefined && { range: [rule.min, rule.max] }),
-    }));
-  return { status: outcome(checks), checks };
-}
 
 module.exports = { rules, validProfile, fromProfile, evaluateProfile, outcome };

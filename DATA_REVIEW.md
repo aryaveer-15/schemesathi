@@ -89,3 +89,93 @@ These are the cases found in the code review, including retained behavior and su
 | PMEGP | “Over 18” excludes the exact birthday in the question. Class VIII is conditional on project cost and sector. Existing units and non-individual routes are outside this check. Verify exact thresholds, subsidy and expansion exceptions with KVIC. | [KVIC PMEGP terms](https://www.pmegp.msme.gov.in/Home/TermsAndConditions) |
 | Jan Aushadhi and future empty rule sets | Empty criteria currently produce a match, intentionally for public access in this listing. The shared evaluation has the same result for any future empty rule set. Confirm public access and prescription limits separately before reusing the pattern. | [PMBI programme page](https://janaushadhi.gov.in/about-pmbjb) · matcher code for the generic behavior |
 | All shared and single-scheme forms | Missing answers, explicit uncertainty and hard failures are distinct. A hard mismatch outranks unresolved criteria. A single-scheme check requires every answer, while a multi-scheme check accepts partial data and rejects an entirely blank request. Input caps accept only whole numbers and may limit unusually large or fractional inputs. Derived shared answers override conflicting manual answers where present, including unknown citizenship, rural location and income. Personal age and beneficiary age are separate inputs, but some shared inferences assume the person entering data is the applicant. | [Profile matcher](server/profileEligibility.js) · [eligibility routes](server/routes/eligibility.js) · verify scheme-specific branches against the sources above |
+
+## Pass 2 document checklists
+
+Seven schemes have a checklist grounded in a readable source that was already linked in SchemeSathi. PM-Vidyalaxmi's list is limited to interest support. Jan Aushadhi is a public store locator, so its results show the official locator without an application checklist. Checklists are displayed with their own source and do not set a scheme's general verification date.
+
+- Pradhan Mantri Ujjwala Yojana. [Official checklist source](https://www.pmuy.gov.in/Ujjwala2.html)
+- Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY). [Official checklist source](https://www.indiapost.gov.in/insurance-services/pmjjby)
+- NITI Aayog Internship Scheme. [Official checklist source](https://www.niti.gov.in/sites/default/files/2023-01/NITI_Internship_Guidelines_17012023_1.pdf)
+- Pradhan Mantri Kisan Maan-Dhan Yojana (PM-KMY). [Official checklist source](https://www.pib.gov.in/PressNoteDetails.aspx?ModuleId=3&NoteId=159959&lang=1&reg=48)
+- NPS Vatsalya. [Official checklist source](https://pfrda.org.in/en/schemes/national-pension-system/nps-vatsalya)
+- PM-Vidyalaxmi. [Official checklist source](https://static.investindia.gov.in/s3fs-public/2025-03/pm_vidyalaxmi_scheme_guidelines.pdf)
+- Shakti Scheme (Karnataka). [Official checklist source](https://bengaluruurban.nic.in/en/scheme/shakti-scheme/)
+
+### Schemes with document review pending
+
+The result shows “Check the official page for required documents” wherever the relevant checklist could not be confirmed. Each source below was already recorded in the app. “Pending” also covers pages that still need a document-specific review.
+
+| Scheme | What to confirm | Official source |
+| --- | --- | --- |
+| PM-KISAN (Pradhan Mantri Kisan Samman Nidhi) | The linked operational PDF could not be read in this review. Confirm the registration evidence and land-record exceptions. | [Published source](https://pmkisan.gov.in/Documents/RevisedPM-KISANOperationalGuidelines%28English%29.pdf) |
+| Ayushman Bharat PM-JAY | Confirm the application documents for the route described in the questionnaire. | [Published source](https://beneficiary.nha.gov.in/) |
+| Sukanya Samriddhi Yojana | The linked savings rules PDF could not be read in this review. Confirm the account-opening and multiple-birth paperwork. | [Published source](https://www.nsiindia.gov.in/writereaddata/SchemeRules/SukanyaSamriddhiAccountSchemeRule.pdf) |
+| Atal Pension Yojana | The FAQ distinguishes Aadhaar handling at enrolment from subsequent submission. Confirm the exact intake paperwork with the bank or post office. | [Published source](https://pfrda.org.in/web/pfrda/w/faqs/atal-pension-yojana) |
+| Pradhan Mantri Awas Yojana – Urban 2.0 | The linked operational PDF timed out in this review. Confirm the paperwork for the applicable housing vertical. | [Published source](https://pmay-urban.gov.in/uploads/guidelines/Operational-Guidelines-of-PMAY-U-2.pdf) |
+| Pradhan Mantri Samajik Sahayata Yojana – Pensions | Confirm the application documents for the route described in the questionnaire. | [Published source](https://www.pib.gov.in/PressReleasepage.aspx?PRID=2323264&lang=1&reg=48) |
+| Pradhan Mantri Mudra Yojana | Confirm the application documents for the route described in the questionnaire. | [Published source](https://www.financialservices.gov.in/pradhan-mantri-mudra-yojana-pmmy) |
+| Pradhan Mantri Suraksha Bima Yojana (PMSBY) | The linked FAQ PDF could not be read in this review. Confirm enrolment documents with the participating account provider. | [Published source](https://jansuraksha.gov.in/Files/PMSBY/ENGLISH/FAQ.pdf) |
+| Pradhan Mantri Jan Dhan Yojana (PMJDY) | The linked scheme page timed out. Verify account-opening documents and minor-account variations with a branch. | [Published source](https://www.pmjdy.gov.in/scheme-detail.aspx) |
+| Pradhan Mantri Awas Yojana – Gramin | Confirm the application documents for the route described in the questionnaire. | [Published source](https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2152589&lang=2&reg=48) |
+| PM Surya Ghar: Muft Bijli Yojana | The portal blocked the request and the readable PIB explainer describes eligibility and process without an applicant checklist. | [Published source](https://pmsuryaghar.gov.in/) |
+| PM Vishwakarma | The portal timed out and the existing PIB questionnaire link did not confirm an application checklist. | [Published source](https://pmvishwakarma.gov.in/) |
+| PM Street Vendor’s AtmaNirbhar Nidhi (PM SVANidhi) | The portal timed out in the document review. Confirm which vendor records the local body accepts. | [Published source](https://pmsvanidhi.mohua.gov.in/) |
+| Pradhan Mantri Fasal Bima Yojana (PMFBY) | Confirm the application documents for the route described in the questionnaire. | [Published source](https://pmfby.gov.in/) |
+| Pradhan Mantri Matru Vandana Yojana (PMMVY) | The ministry source and citizen portal could not be read in this review. Confirm the maternal and category-specific records. | [Published source](https://wcd.gov.in/women/pradhan-mantri-matru-vandana-yojna) |
+| National Means-cum-Merit Scholarship Scheme (NMMSS) | Confirm the application documents for the route described in the questionnaire. | [Published source](https://scholarships.gov.in/All-Scholarships) |
+| SUBHADRA – Odisha | The portal blocked the request and the linked English guidelines returned no extractable text. Confirm the current intake notices. | [Published source](https://wcd.odisha.gov.in/sites/default/files/2024-08/SUBHADRA%20Guideline-Eng_1.pdf) |
+| Chief Minister’s Kaushalya Karnataka Yojane | Confirm the application documents for the route described in the questionnaire. | [Published source](https://skillmission.karnataka.gov.in/wp-content/uploads/2023/10/CMKKY_Guidline-Final_NEW-1.pdf) |
+| Prime Minister’s Internship Scheme | Confirm the application documents for the route described in the questionnaire. | [Published source](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2254498&lang=1&reg=3) |
+| DPIIT Internship Scheme | The readable guidelines discuss eligibility and the certificate awarded after completion. Confirm documents required from applicants. | [Published source](https://www.dpiit.gov.in/static/uploads/2025/07/82f116ad3fad3dbd985903754fa50622.pdf) |
+| National Apprenticeship Training Scheme (NATS) | The two linked landing pages did not establish a specific applicant checklist. Confirm vacancy and registration documents. | [Published source](https://boatwr.education.gov.in/en/students/) |
+| Pradhan Mantri Shram Yogi Maandhan (PM-SYM) | The linked labour ministry page returned no readable scheme text in this review. | [Published source](https://www.labour.gov.in/offerings/schemes-and-services/details/pm-sym-QTOzATMtQWa) |
+| National Pension Scheme for Traders and Self-Employed Persons | Confirm the application documents for the route described in the questionnaire. | [Published source](https://www.eshram.gov.in/Schemes) |
+| Janani Suraksha Yojana (JSY) | Confirm the application documents for the route described in the questionnaire. | [Published source](https://nhm.gov.in/nhm/index1.php?lang=1&level=3&lid=309&sublinkid=841) |
+| Janani Shishu Suraksha Karyakram (JSSK) | Confirm the application documents for the route described in the questionnaire. | [Published source](https://www.nhm.gov.in/index4.php?lang=1&level=0&lid=171&linkid=150) |
+| Rashtriya Bal Swasthya Karyakram (RBSK) | Confirm the application documents for the route described in the questionnaire. | [Published source](https://nhm.gov.in/index1.php?lang=1&level=0&lid=773&linkid=499) |
+| Pradhan Mantri National Dialysis Programme | Confirm the application documents for the route described in the questionnaire. | [Published source](https://pmndp.mohfw.gov.in/en/introduction-of-pradhan-mantri-national-dialysis-program-pmndp) |
+| Ni-kshay Poshan Yojana | The linked Central TB Division page lists outreach material. Ask the treating centre to confirm the required records. | [Published source](https://tbcindia.mohfw.gov.in/ni-kshay-poshan-yojana/) |
+| Mission Indradhanush | Confirm the application documents for the route described in the questionnaire. | [Published source](https://nicobars.andaman.nic.in/scheme/mission-indradhanush/) |
+| PM-Vidyalaxmi | The readable guidelines cover interest-support documents. Confirm loan-specific lender paperwork separately. | [Published source](https://static.investindia.gov.in/s3fs-public/2025-03/pm_vidyalaxmi_scheme_guidelines.pdf) |
+| PM-USP Central Sector Scholarship for College and University Students | The linked intake FAQ returned 404. Confirm the current fresh and renewal paperwork in the current official intake. | [Published source](https://www.education.gov.in/sites/upload_files/mhrd/files/upload_document/FAQs_PM_USP2526.pdf) |
+| AICTE Pragati Scholarship | The linked DTE summary did not establish an intake document list. Check the current degree or diploma notification. | [Published source](https://dte.maharashtra.gov.in/pragati-scholarship-scheme/) |
+| AICTE Saksham Scholarship | Confirm the application documents for the route described in the questionnaire. | [Published source](https://highereducation.nagaland.gov.in/nagaland-scholarship-nodal-cell-nsnc/) |
+| AICTE Swanath Scholarship | Confirm the application documents for the route described in the questionnaire. | [Published source](https://highereducation.nagaland.gov.in/nagaland-scholarship-nodal-cell-nsnc/) |
+| Swami Vivekananda Merit-cum-Means Scholarship | The linked application procedure timed out in this review. Confirm the current fresh, renewal and K3 requirements. | [Published source](https://svmcm.wb.gov.in/page/about.php) |
+| Kanyashree Prakalpa | The linked FAQ rendered a page shell without a confirmed checklist. Verify the K1 or K2 application requirements with the institution. | [Published source](https://kanyashree.wb.gov.in/faq) |
+| CM KISAN (Odisha) | The application portal timed out. Check the relevant landless or cultivation component before listing records. | [Published source](https://agri.odisha.gov.in/en/schemes-agriculture/agriculture/cm-kisan) |
+| Mukhyamantri Majhi Ladki Bahin Yojana | The Pune district page lists eligibility and links the portal. Confirm the intake’s document list separately. | [Published source](https://pune.gov.in/en/scheme/mukhyamantri-majhi-ladki-bahin-yojana/) |
+| Pudhumai Penn | Confirm the application documents for the route described in the questionnaire. | [Published source](https://dte.tn.gov.in/pudhumai-penn-schemes) |
+| Chief Minister’s Comprehensive Health Insurance Scheme (Tamil Nadu) | The linked eligibility portal returned no readable text in the document review. | [Published source](https://www.cmchistn.com/eligibility/) |
+| Krishak Bandhu (Natun) | Confirm the application documents for the route described in the questionnaire. | [Published source](https://agriculture.wb.gov.in/krishak-bandhu-natun-) |
+| Kisan Credit Card (KCC) | The linked page did not expose readable content without JavaScript. Confirm documents for the applicant’s activity and lender. | [Published source](https://fasalrin.gov.in/eligibility) |
+| Soil Health Card Scheme | The linked Assam page returned 404 in Pass 1. Confirm whether the local lab requires any records. | [Published source](https://diragri.assam.gov.in/schemes/detail/soil-health-card-shc) |
+| Prime Minister’s Employment Generation Programme (PMEGP) | The linked terms timed out. Confirm the checklist for the new-unit route with the implementing agency. | [Published source](https://www.pmegp.msme.gov.in/Home/TermsAndConditions) |
+
+## Pass 2 result accuracy review
+
+| Potentially misleading output | Handling in this pass and remaining uncertainty |
+| --- | --- |
+| “Likely matches” could be understood as an award, successful enrolment, a place in a programme, or a guarantee that applications are currently open. | Results explicitly leave the decision to the responsible authority. Intake windows, availability, residency records, deadlines and other current conditions still require confirmation through the listed source. |
+| An explicit “Not sure” could be overridden by a derived answer or buried under a hard exclusion. | Any applicable explicit unknown now produces a possible match and names the uncertain question. A known failed criterion is still visible in the same result. This possible bucket can therefore include a known blocker. |
+| Blank answers, skipped branches and an affirmative mismatch could look the same. | Explanations distinguish unanswered questions, “Not sure”, hard requirements and answers referred for manual review. The result can still be incomplete if users stop early. |
+| A rule that changes at a boundary or has an exception can be mistaken for a universal rule. | The original eligibility questions and age and income thresholds are retained. Pass 1 lists scheme-specific boundary and exception questions. Conditional exceptions such as Sukanya multiple births are shown where documented. |
+| A shared answer could refer to the user rather than the beneficiary. | Personal and child age remain separate. The existing shared age-to-applicant inference can still affect APY, Ujjwala and NSAP in the all-scheme check. The exact scheme-specific questions remain available in the single-scheme flow. Use the age of the person being checked when a shared age question applies. |
+| Generic age, area or income questions could make users think the app checked exact location or verified financial records. | The guided flow uses the existing PMAY-U question about covered urban locations and the existing yes/no income cutoff. It sends neither a precise annual income nor an area value from the guided UI. Known legacy clients can still send these fields. |
+| A likely preliminary result for PMAY-U, PM-JAY, PMAY-G, NMMSS, PM-USP, PMFBY or PM-Vidyalaxmi could be mistaken for confirmation on a current official list. | List or local verification notes appear where Pass 1 classified them. The app does not query individual beneficiary lists, state notifications or lender records. |
+| Scheme names can cover several routes when a check assesses only one. | Existing scope notices are retained for PMAY Urban, PM-JAY and NSAP. PM-Vidyalaxmi’s loan match does not assess interest support, NMMSS has separate selection and award stages, and Krishak Bandhu’s death-benefit route remains separate. Other Pass 1 pathway limitations also remain. |
+| A short checklist could look complete or apply to every category. | Checklist labels show the official source. Route-specific notes identify the stage for NITI onboarding and PM-Vidyalaxmi interest support. Other documents can be required. Unconfirmed papers are omitted, and result next steps avoid presenting older unsupported document claims as instructions. |
+| An official criteria link could be mistaken for the application form, or may be redirected, blocked or outdated. | The results label criteria and application links separately. The Pass 1 link findings remain open. A checked link or sourced checklist does not set the scheme’s last verified date. |
+| A public programme or a scheme outside the maintained catalogue could be mistaken for a personal eligibility decision. | Jan Aushadhi appears in its own public-access section. The coverage note links back to the catalogue. Additional imported schemes can lack matcher coverage. |
+| A printed or shared result could imply the recipient was assessed. | The print view retains the preliminary notice. Text sharing exports names and official links for likely and possible matches, without statuses, reasons or answers. A link recipient must do their own eligibility check. |
+| Older translations or English fallback can change how an applicant interprets a question or reason. | Existing question strings remain in place. New navigation, result copy and checklist text use English fallback pending the localisation pass. Existing translation equivalence remains to be reviewed. |
+
+### Question wording carried forward
+
+No individual eligibility question was rewritten. The guided all-scheme flow uses these existing scheme questions in place of the previous general prompts.
+
+| Previous general prompt | Existing question used in the guided flow |
+| --- | --- |
+| Annual household income (₹) | Is your annual household income ₹9 lakh or less? |
+| Area you live in | Does your family live in an urban area covered by PMAY-U 2.0? |

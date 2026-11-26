@@ -3,7 +3,9 @@ const { requireAuth } = require('../middleware/auth');
 const catalog = require('../catalog');
 const applicationDirections = require('../applicationDirections');
 const remainingEligibility = require('../remainingEligibility');
-const { rules, validProfile, fromProfile, evaluateProfile, outcome } = require('../profileEligibility');
+const { rules, validProfile } = require('../profileEligibility');
+const { effectiveInputs, evaluateLegacy, evaluateProfile } = require('../../client/src/eligibilityMatcher.mjs');
+const { questionnaire, documentChecklists, resultDirections } = require('../questionnaire');
 
 const router = express.Router();
 
@@ -25,22 +27,19 @@ function validAnswers(answers, questions) {
     && Object.entries(answers).every(([key, value]) => questions.has(key) && supportedAnswers.has(value));
 }
 
-function evaluate(answers, { criteria, sourceUrl, reviewCriteria = [] }) {
-  const checks = Object.entries(criteria).map(([key, expected]) => {
-    if (!Object.hasOwn(answers, key)) return { key, status: 'unanswered' };
-    if (answers[key] === expected) return { key, status: 'matched' };
-    if (answers[key] === 'unknown' || reviewCriteria.includes(key)) return { key, status: 'review' };
-    return { key, status: 'unmatched' };
-  });
-  return { status: outcome(checks), checks, sourceUrl };
+function evaluate(answers, rule) {
+  return { ...evaluateLegacy(answers, rule), sourceUrl: rule.sourceUrl };
 }
 
 function withNextSteps(slug, result) {
   const application = applicationDirections[slug];
-  if (result.status === 'matched') return { ...result, application };
-  if (result.status === 'review' && application?.verification
-    && result.checks.some((check) => check.status !== 'unanswered')) {
-    return { ...result, verification: application.verification };
+  const documents = documentChecklists[slug];
+  if (result.status === 'matched') {
+    return { ...result, application, nextSteps: resultDirections(slug), documents };
+  }
+  if (result.status === 'review') {
+    const verification = result.checks.some((check) => check.status !== 'unanswered') ? application?.verification : undefined;
+    return { ...result, verification, documents };
   }
   return result;
 }
@@ -52,12 +51,7 @@ router.post('/matches', requireAuth, (req, res) => {
     || (Object.keys(answers).length === 0 && Object.keys(profile).length === 0)) {
     return res.status(400).json({ error: 'Provide at least one recognized answer' });
   }
-  const effectiveAnswers = { ...answers, ...fromProfile(profile) };
-  const effectiveProfile = {
-    ...profile,
-    citizen: effectiveAnswers.citizen,
-    bankAccount: profile.savings === 'yes' ? 'yes' : profile.bankAccount,
-  };
+  const { effectiveAnswers, effectiveProfile } = effectiveInputs(answers, profile);
   const results = Object.entries(schemes).map(([slug, rule]) => ({
     slug, ...withNextSteps(slug, evaluate(effectiveAnswers, rule)),
   }));
@@ -74,23 +68,28 @@ router.get('/profile-checks', (_req, res) => {
   res.json(additionalSections);
 });
 
+router.get('/questionnaire', (_req, res) => res.json(questionnaire));
+
 router.get('/:slug', (req, res) => {
   if (!Object.hasOwn(schemes, req.params.slug)) {
     return res.status(404).json({ error: 'Eligibility check unavailable' });
   }
-  res.json({ sourceUrl: schemes[req.params.slug].sourceUrl });
+  const { criteria, reviewCriteria, sourceUrl } = schemes[req.params.slug];
+  res.json({ criteria, reviewCriteria, sourceUrl });
 });
 
 router.post('/:slug', (req, res) => {
+  res.set('Cache-Control', 'no-store');
   const { slug } = req.params;
   if (!Object.hasOwn(schemes, slug)) {
     return res.status(404).json({ error: 'Eligibility check unavailable' });
   }
 
-  const { answers } = req.body ?? {};
+  const { answers, partial } = req.body ?? {};
   const rule = schemes[slug];
   const questions = new Set(Object.keys(rule.criteria));
-  if (!validAnswers(answers, questions) || Object.keys(answers).length !== questions.size) {
+  if (!validAnswers(answers, questions) || Object.keys(answers).length === 0
+    || (partial !== true && Object.keys(answers).length !== questions.size)) {
     return res.status(400).json({ error: 'Provide an answer for each question' });
   }
 

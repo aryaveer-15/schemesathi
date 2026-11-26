@@ -5,6 +5,8 @@ import { additionalTranslations } from '../src/locales/index.js';
 import { translatedScheme } from '../src/schemeText.js';
 
 const catalog = createRequire(import.meta.url)('../../server/catalog.js');
+const { questionnaire, documentChecklists } = createRequire(import.meta.url)('../../server/questionnaire.js');
+const legacyChecks = createRequire(import.meta.url)('../../server/legacyEligibilityChecks.js');
 
 const scheme = {
   _id: '64f000000000000000000001',
@@ -20,17 +22,18 @@ test('home, keyboard navigation, catalog and eligibility result', async ({ page 
   await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme] }));
   await page.route(`**/api/schemes/${scheme._id}`, (route) => route.fulfill({ json: scheme }));
   await page.route('**/api/eligibility/pm-ujjwala-yojana', async (route) => {
-    if (route.request().method() === 'GET') return route.fulfill({ json: { sourceUrl: scheme.sourceUrl } });
+    if (route.request().method() === 'GET') return route.fulfill({ json: legacyChecks[scheme.slug] });
     expect(route.request().postDataJSON()).toEqual({ answers: { adultWoman: 'yes', lpg: 'no', deprivation: 'yes' } });
     await route.fulfill({ json: {
       status: 'matched',
       checks: ['adultWoman', 'lpg', 'deprivation'].map((key) => ({ key, status: 'matched' })),
       sourceUrl: scheme.sourceUrl,
-      application: {
+      nextSteps: {
         url: scheme.sourceUrl,
         online: 'Pick an LPG provider and start an application.',
         visit: 'You can also visit a participating LPG distributor.',
       },
+      documents: documentChecklists[scheme.slug],
     } });
   });
   await page.goto('/');
@@ -44,17 +47,20 @@ test('home, keyboard navigation, catalog and eligibility result', async ({ page 
   await expect(page.getByRole('link', { name: 'Visit the official scheme website' })).toHaveAttribute('href', scheme.sourceUrl);
   await page.getByRole('main').getByRole('link', { name: 'Check eligibility' }).click();
   await expect(page.getByLabel('Scheme to check')).toHaveValue(scheme.slug);
-  await page.getByRole('button', { name: 'Check eligibility' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByRole('alert')).toContainText('Answer every question');
   await expect(page.getByLabel('Is the applicant a woman aged 18 or older?')).toBeFocused();
   await expect(page.getByLabel('Is the applicant a woman aged 18 or older?')).toHaveAttribute('aria-invalid', 'true');
   await page.getByLabel('Is the applicant a woman aged 18 or older?').selectOption('yes');
+  await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Does anyone in the household already have an LPG connection?').selectOption('no');
+  await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Does the household qualify as poor under the official deprivation declaration?').selectOption('yes');
   await page.getByRole('button', { name: 'Check eligibility' }).click();
-  await expect(page.getByRole('heading', { name: 'Potential match' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Likely matches' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open the official portal' })).toHaveAttribute('href', scheme.sourceUrl);
   await expect(page.getByText('You can also visit a participating LPG distributor.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Source for this checklist' })).toHaveAttribute('href', scheme.sourceUrl);
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
@@ -110,7 +116,8 @@ test('keeps the selected language and clears expired sign-ins', async ({ page })
 
 test('all added languages translate the site, catalog, and eligibility forms', async ({ page }) => {
   await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme] }));
-  await page.route('**/api/eligibility/*', (route) => route.fulfill({ json: { sourceUrl: scheme.sourceUrl } }));
+  await page.route('**/api/eligibility/*', (route) =>
+    route.fulfill({ json: legacyChecks[new URL(route.request().url()).pathname.split('/').at(-1)] }));
   await page.goto('/');
   const language = page.getByRole('banner').getByRole('combobox');
   for (const [code, copy] of Object.entries(additionalTranslations)) {
@@ -134,7 +141,7 @@ test('all added languages translate the site, catalog, and eligibility forms', a
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await page.getByRole('navigation').getByRole('link', { name: additionalTranslations.ur.eligibility }).click();
   await expect(page.getByLabel(additionalTranslations.ur.pensionAge)).toBeVisible();
-  await page.getByRole('button', { name: additionalTranslations.ur.eligibility }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByRole('alert')).toHaveText(additionalTranslations.ur.answerRequired);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
 });
@@ -143,17 +150,27 @@ test('registration opens the match questionnaire', async ({ page }) => {
   const user = { name: 'Demo Resident' };
   await page.route('**/api/auth/register', (route) => route.fulfill({ status: 201, json: { token: 'demo-token', user } }));
   await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user } }));
-  await page.route('**/api/eligibility/profile-checks', (route) => route.fulfill({ json: [{
-    slug: 'pm-matru-vandana',
-    title: { en: 'PMMVY maternity support' },
-    sourceUrl: 'https://pmmvy.wcd.gov.in/',
-    questions: [{ key: 'maternityStage', text: 'Is this for your first living child?' }],
-  }] }));
+  const fields = {
+    'pm-matru-vandana': ['maternityStage'],
+    'atal-pension-yojana': ['citizen', 'savings'],
+    'pm-surya-ghar': ['citizen', 'solarConnection'],
+    'nps-vatsalya': ['minorAge'],
+    'pm-awas-gramin': ['ruralHousingList'],
+    pmjjby: ['age', 'savings', 'autoDebit'],
+  };
+  const plan = Object.entries(fields).map(([slug, keys]) => {
+    const entry = questionnaire.find((item) => item.slug === slug);
+    return { ...entry, criteria: Object.fromEntries(keys.map((key) => [key, entry.criteria[key]])) };
+  });
+  await page.route('**/api/eligibility/questionnaire', (route) => route.fulfill({ json: plan }));
   await page.route('**/api/eligibility/matches', async (route) => {
     expect(route.request().headers().authorization).toBe('Bearer demo-token');
     expect(route.request().postDataJSON()).toEqual({
       answers: {},
-      profile: { citizen: 'yes', solarConnection: 'yes', minorAge: 12, ruralHousingList: 'unknown', maternityStage: 'yes' },
+      profile: {
+        maternityStage: 'yes', age: 34, citizen: 'yes', savings: 'yes', autoDebit: 'yes',
+        solarConnection: 'yes', minorAge: 12, ruralHousingList: 'unknown',
+      },
     });
     await route.fulfill({ json: {
       results: [{
@@ -180,7 +197,7 @@ test('registration opens the match questionnaire', async ({ page }) => {
         status: 'matched',
         checks: [],
         sourceUrl: 'https://www.indiapost.gov.in/insurance-services/pmjjby',
-        application: { visit: 'Ask your participating bank or post office for the enrolment form.' },
+        nextSteps: { visit: 'Ask your participating bank or post office for the enrolment form.' },
       }],
       effectiveAnswers: { citizen: 'yes' },
     } });
@@ -193,20 +210,23 @@ test('registration opens the match questionnaire', async ({ page }) => {
   await page.getByLabel('Password', { exact: true }).fill('example-password');
   await page.getByRole('button', { name: 'Register', exact: true }).click();
   await expect(page).toHaveURL(/\/my-schemes\?scheme=pm-matru-vandana$/);
-  await page.getByLabel('Is this for your first living child?').selectOption('yes');
-  await page.getByRole('region', { name: 'About you' }).getByLabel('Are you an Indian citizen?').selectOption('yes');
-  await page.getByText('PM Surya Ghar rooftop solar', { exact: true }).click();
-  await page.getByLabel('Does the home have a residential grid connection with the local electricity distributor?').selectOption('yes');
-  await page.getByText('NPS Vatsalya and child health screening', { exact: true }).click();
-  await page.getByLabel('Age of the child being checked, in completed years').fill('12');
-  await page.getByText('PMAY Gramin rural housing', { exact: true }).click();
+  for (const label of [
+    /first living child/, 'Age in completed years', 'Are you an Indian citizen?',
+    /personal savings account/, /willing to pay the insurance premium/,
+    /residential grid connection/, 'Age of the child being checked, in completed years',
+  ]) {
+    const input = page.locator('form').getByLabel(label);
+    if (await input.getAttribute('type') === 'number') await input.fill(label === 'Age in completed years' ? '34' : '12');
+    else await input.selectOption('yes');
+    await page.getByRole('button', { name: 'Next' }).click();
+  }
   await page.getByLabel(/confirmed that your household is on the approved PMAY-G/).selectOption('unknown');
   await page.getByRole('button', { name: 'Show my matches' }).click();
-  await expect(page.getByRole('heading', { name: 'Needs verification' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Possible matches, needs verification' })).toBeVisible();
   await expect(page.getByText('Ask your Gram Panchayat to check the beneficiary list.')).toBeVisible();
   await expect(page.getByText('Ask your participating bank or post office for the enrolment form.')).toBeVisible();
-  await page.getByText('PM Surya Ghar', { exact: true }).click();
-  await expect(page.getByRole('link', { name: 'Read the official criteria' }).last()).toHaveAttribute('href', 'https://pmsuryaghar.gov.in/');
+  const solar = page.getByRole('article').filter({ has: page.getByRole('heading', { name: /PM Surya Ghar/ }) });
+  await expect(solar.getByRole('link', { name: 'Read the official criteria' })).toHaveAttribute('href', 'https://pmsuryaghar.gov.in/');
 });
 
 test('guest help chat shows official scheme links without sending chat messages', async ({ page }) => {

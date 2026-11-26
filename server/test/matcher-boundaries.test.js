@@ -77,6 +77,9 @@ test('all reviewable answers preserve missing, unknown and exception states', ()
   assert.equal(evaluateProfile({ ...shakti, shaktiService: 'no' }, rules['ka-shakti']).status, 'unmatched');
   const jsy = rules['janani-suraksha'];
   assert.equal(evaluateProfile({ jsyDelivery: 'yes', jsyLocalRules: 'no' }, jsy).status, 'review');
-  assert.equal(evaluateProfile({ jsyDelivery: 'no', jsyLocalRules: 'unknown' }, jsy).status, 'unmatched');
+  assert.equal(evaluateProfile({ jsyDelivery: 'no' }, jsy).status, 'unmatched');
+  assert.deepEqual(evaluateProfile({ jsyDelivery: 'no', jsyLocalRules: 'unknown' }, jsy).checks.map(({ status }) => status),
+    ['unmatched', 'review']);
+  assert.equal(evaluateProfile({ jsyDelivery: 'no', jsyLocalRules: 'unknown' }, jsy).status, 'review');
   assert.deepEqual(evaluateProfile({}, rules['jan-aushadhi']), { status: 'matched', checks: [] });
 });

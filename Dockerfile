@@ -11,6 +11,7 @@ WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm ci --omit=dev
 COPY server/ ./
+COPY client/src/eligibilityMatcher.mjs /app/client/src/eligibilityMatcher.mjs
 COPY --from=client-build /app/client/dist /app/client/dist
 USER node
 EXPOSE 5000

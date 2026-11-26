@@ -433,6 +433,90 @@ select {
   margin: 0;
 }
 
+.eligibility-wizard,
+.wizard-chooser,
+.eligibility-result {
+  width: 100%;
+  max-width: 42rem;
+  margin-block: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.eligibility-wizard progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.wizard-chooser select,
+.eligibility-wizard select {
+  width: 100%;
+  min-width: 0;
+}
+
+.eligibility-wizard h2 {
+  margin-block: 0.35rem 0.75rem;
+}
+
+.eligibility-form .wizard-unknown {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 0.5rem;
+}
+
+.wizard-unknown input {
+  width: auto;
+  min-height: auto;
+}
+
+.wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.wizard-actions button,
+.wizard-chooser select,
+.eligibility-wizard select,
+.eligibility-wizard input[type='number'] {
+  min-height: 44px;
+  max-width: 100%;
+}
+
+.share-results:not([hidden]) {
+  display: grid;
+  gap: 0.5rem;
+  margin-block-start: 0.75rem;
+}
+
+.share-results textarea {
+  width: 100%;
+}
+
+.match-result-card h4 {
+  margin-block: 0 0.5rem;
+}
+
+.result-reasons summary,
+.result-documents summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+@media print {
+  .app:has(.eligibility-result) .header,
+  .app:has(.eligibility-result) .skip-link,
+  .questionnaire-page > p,
+  .wizard-chooser,
+  .eligibility-result .result-controls {
+    display: none;
+  }
+
+  .eligibility-result .match-result-card {
+    break-inside: avoid;
+  }
+}
+
 .match-section + .match-section,
 .chat-message + .chat-message {
   margin-top: 0.5rem;

@@ -57,7 +57,8 @@ test('each questionnaire matches the API and exposes its official source', async
 test('uncertainty, exceptions, and unmet requirements retain distinct results', async () => {
   for (const [slug, overrides, expected] of [
     ['atal-pension-yojana', { pensionAge: 'unknown' }, 'review'],
-    ['atal-pension-yojana', { taxpayer: 'yes', savings: 'unknown' }, 'unmatched'],
+    ['atal-pension-yojana', { taxpayer: 'yes' }, 'unmatched'],
+    ['atal-pension-yojana', { taxpayer: 'yes', savings: 'unknown' }, 'review'],
     ['sukanya-samriddhi-yojana', { familyAccounts: 'yes' }, 'review'],
     ['pm-kisan', { landReview: 'yes' }, 'review'],
     ['ayushman-bharat-pmjay', { beneficiary: 'no' }, 'review'],
