@@ -21,7 +21,7 @@ export default function App() {
       <a className="skip-link" href="#content">{t('skip')}</a>
       <header className="header">
         <Link to="/" className="brand">
-          <span className="brand-mark" aria-hidden="true">S</span>
+          <img className="brand-mark" src="/schemesathi-mark.svg" alt="" width="40" height="40" />
           {t('appName')}
         </Link>
         <nav className="nav">
