@@ -46,6 +46,8 @@ function SchemeDetailsContent({ id }) {
 
   useEffect(() => {
     if (!scheme) return;
+    const initialTags = [...document.head.querySelectorAll('[data-server-scheme-metadata]')];
+    initialTags.forEach((node) => node.remove());
     const appName = getText(lang, 'appName');
     const title = localizedScheme(scheme, 'title', lang) + ' | ' + appName;
     const description = localizedScheme(scheme, 'summary', 'en');

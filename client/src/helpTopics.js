@@ -33,9 +33,11 @@ export function helpReply(question, t, search) {
 
   const schemes = search.named(query, { allowTypos: false });
   if (schemes.length) return { schemes, named: true };
-  if (!factual.test(query) && discovery.test(query)) {
-    const suggestions = search.find(query).slice(0, 4);
-    if (suggestions.length) return { schemes: suggestions };
-  }
+  const matches = query ? search.find(query) : [];
+  if (matches.length) return {
+    schemes: matches.slice(0, 4),
+    suggested: matches.map(({ slug }) => slug),
+    unsure: factual.test(query) || !discovery.test(query),
+  };
   return { topic: 'fallback' };
 }

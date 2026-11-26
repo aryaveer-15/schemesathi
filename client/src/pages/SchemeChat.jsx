@@ -32,7 +32,8 @@ function ChatPanel({ initialTopic }) {
   const announcementLang = announcedReply?.schemes || announcedReply?.topic === 'fallback'
     || announcementKey === 'helpApplyAnswer' ? 'en' : lang;
   const announcement = announcedReply?.schemes
-    ? announcedReply.schemes.map((scheme) => localizedScheme(scheme, 'title', 'en')).join(', ')
+    ? [announcedReply.unsure ? unknownAnswer : '', ...announcedReply.schemes
+      .map((scheme) => localizedScheme(scheme, 'title', 'en'))].filter(Boolean).join(' ')
     : announcementKey ? getText(announcementLang, announcementKey) : announcedReply ? unknownAnswer : '';
 
   useEffect(() => {
@@ -78,8 +79,11 @@ function ChatPanel({ initialTopic }) {
               <strong>{t('schemeChat')}</strong>
               {reply.schemes ? (
                 <>
+                  {reply.unsure && <p lang="en" dir="ltr">{unknownAnswer}</p>}
                   {reply.schemes.map((scheme) => <SchemeReply key={scheme.slug} scheme={scheme} />)}
-                  {!reply.named && <p><Link to="/schemes">{t('browse')}</Link></p>}
+                  {reply.suggested && <p><Link to={'/schemes?' + new URLSearchParams({
+                    suggested: reply.suggested.join(','),
+                  })}>{t('browse')}</Link></p>}
                   <TranslationNotice />
                   <p lang="en" dir="ltr">{getText('en', 'disclaimer')}</p>
                 </>

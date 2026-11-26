@@ -1,9 +1,11 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const Scheme = require('../models/Scheme');
 const applicationDirections = require('../applicationDirections');
 const { rules } = require('../profileEligibility');
 const { verificationKind } = require('../schemeVerification');
+const { boundedText, hasOnlyFields } = require('../requestValidation');
+const { categories } = require('../catalogFields');
+const { classifySchemeId, findScheme } = require('../schemeLookup');
 const catalog = new Map(require('../catalog').map((scheme) => [scheme.slug, scheme]));
 
 const router = express.Router();
@@ -29,12 +31,17 @@ function publishedScheme(scheme) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const filter = {};
-    if (typeof req.query.category === 'string' && req.query.category) {
-      filter.category = req.query.category;
+    const { category, state, q } = req.query;
+    if (!hasOnlyFields(req.query, ['category', 'state', 'q'])
+      || (category !== undefined && category !== '' && !categories.includes(category))
+      || (state !== undefined && !boundedText(state, 100))
+      || (q !== undefined && !boundedText(q, 240))) {
+      return res.status(400).json({ error: 'Invalid scheme filters' });
     }
-    if (typeof req.query.state === 'string' && req.query.state) filter.state = req.query.state;
-    const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    const filter = {};
+    if (category) filter.category = category;
+    if (state?.trim()) filter.state = state.trim();
+    const query = q?.trim() ?? '';
     const match = new RegExp(escapeRegex(query), 'i');
     const schemes = (await Scheme.find(filter).lean()).map(publishedScheme)
       .filter((scheme) => !query || [scheme.title, scheme.summary].some((field) => (
@@ -50,13 +57,11 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const objectId = mongoose.isValidObjectId(id);
-    const validSlug = id.length <= 150 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
-    if (!objectId && !validSlug) {
+    const kind = classifySchemeId(id);
+    if (!kind) {
       return res.status(400).json({ error: 'Invalid scheme id' });
     }
-    const legacy = objectId ? await Scheme.findById(id).lean() : null;
-    const scheme = legacy ?? (validSlug ? await Scheme.findOne({ slug: id }).lean() : null);
+    const scheme = await findScheme(id, kind);
     if (!scheme) return res.status(404).json({ error: 'Scheme not found' });
     const published = publishedScheme(scheme);
     if (Object.hasOwn(applicationDirections, scheme.slug)) published.application = applicationDirections[scheme.slug];

@@ -13,7 +13,7 @@ let token;
 
 before(async () => {
   process.env.JWT_SECRET = randomUUID();
-  token = jwt.sign({ id: 'test-user', role: 'user' }, process.env.JWT_SECRET);
+  token = jwt.sign({ id: '000000000000000000000001', role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
   const app = createApp();
   server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');

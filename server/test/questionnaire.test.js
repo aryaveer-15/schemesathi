@@ -12,11 +12,12 @@ let server;
 let base;
 let token;
 const logs = [];
+let requestNumber = 0;
 
 before(async () => {
   process.env.JWT_SECRET = randomUUID();
-  token = jwt.sign({ id: 'test-user', role: 'user' }, process.env.JWT_SECRET);
-  server = createApp({ logger: { error: (entry) => logs.push(entry) } }).listen(0, '127.0.0.1');
+  token = jwt.sign({ id: '000000000000000000000001', role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  server = createApp({ proxyHops: 1, logger: { error: (entry) => logs.push(entry) } }).listen(0, '127.0.0.1');
   await once(server, 'listening');
   base = `http://127.0.0.1:${server.address().port}/api/eligibility`;
 });
@@ -24,9 +25,14 @@ before(async () => {
 after(() => server?.close());
 
 function post(path, body) {
+  const index = requestNumber++;
   return fetch(`${base}/${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      'X-Forwarded-For': `198.18.${Math.floor(index / 250)}.${index % 250 + 1}`,
+    },
     body: JSON.stringify(body),
   });
 }

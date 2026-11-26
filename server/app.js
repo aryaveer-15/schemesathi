@@ -4,28 +4,51 @@ const express = require('express');
 const cors = require('cors');
 const { rateLimit } = require('express-rate-limit');
 const compression = require('compression');
+const helmet = require('helmet');
+const { createSchemePages } = require('./schemeMetadata');
 
 const hashedAsset = /-[\w-]{8}\.[a-z0-9]+$/i;
 
-function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDir, logger = console } = {}) {
+function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDir, logger = console,
+  siteOrigin, production = false, cspReportOnly = true } = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', proxyHops);
+  app.set('query parser', 'simple');
+  app.use(helmet({
+    strictTransportSecurity: production ? { maxAge: 31536000, includeSubDomains: false } : false,
+    crossOriginResourcePolicy: false,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    xFrameOptions: { action: 'deny' },
+    contentSecurityPolicy: {
+      reportOnly: cspReportOnly,
+      directives: {
+        baseUri: ["'self'"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        imgSrc: ["'self'", 'data:'],
+        styleSrc: ["'self'"],
+        upgradeInsecureRequests: null,
+      },
+    },
+  }));
 
   app.use((req, res, next) => {
     res.set('X-Request-Id', randomUUID());
-    res.set('X-Content-Type-Options', 'nosniff');
-    res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.set('X-Frame-Options', 'DENY');
-    res.set('Content-Security-Policy', "frame-ancestors 'none'; object-src 'none'; base-uri 'self'");
+    if (cspReportOnly) res.set('Content-Security-Policy', "frame-ancestors 'none'; object-src 'none'; base-uri 'self'");
+    const started = process.hrtime.bigint();
     res.on('finish', () => {
-      if (res.statusCode < 500 && res.statusCode !== 429) return;
-      logger.error(JSON.stringify({
-        event: 'http_failure',
+      const failure = res.statusCode >= 500 || res.statusCode === 429;
+      const log = failure ? logger.error : logger.info;
+      log?.call(logger, JSON.stringify({
+        event: failure ? 'http_failure' : 'http_request',
         requestId: res.get('X-Request-Id'),
         method: req.method,
-        route: req.route?.path,
+        route: typeof req.route?.path === 'string' ? req.route.path : 'unmatched',
         status: res.statusCode,
+        durationMs: Math.round(Number(process.hrtime.bigint() - started) / 1e6),
       }));
     });
     next();
@@ -33,6 +56,8 @@ function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDi
 
   app.use('/api', cors({
     origin: (origin, callback) => callback(null, Boolean(origin && origins.includes(origin))),
+    methods: ['GET', 'HEAD', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
   }));
   app.use(compression({
     filter(req, res) {
@@ -40,18 +65,29 @@ function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDi
         && !req.path.startsWith('/api/auth/') && compression.filter(req, res);
     },
   }));
-  app.use('/api', express.json({ limit: '16kb' }));
   app.use('/api/auth', (_req, res, next) => {
     res.set('Cache-Control', 'no-store');
     next();
   });
-  app.post(['/api/auth/login', '/api/auth/register'], rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 20,
+  const limit = (max, windowMs, skip) => rateLimit({
+    windowMs,
+    limit: max,
+    skip,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     message: { error: 'Too many attempts. Try again later.' },
-  }));
+  });
+  app.use('/api/auth', limit(20, 15 * 60 * 1000, (req) => ['GET', 'HEAD'].includes(req.method)));
+  app.use('/api/auth', limit(120, 15 * 60 * 1000, (req) => !['GET', 'HEAD'].includes(req.method)));
+  app.use('/api/eligibility', (req, res, next) => {
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) res.set('Cache-Control', 'no-store');
+    next();
+  });
+  app.use('/api/eligibility', limit(90, 60 * 1000, (req) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method)));
+  app.use('/api', express.json({ limit: '16kb', inflate: false }));
+  app.get('/api/health/live', (_req, res) => {
+    res.set('Cache-Control', 'no-store').json({ status: 'ok' });
+  });
   app.get('/api/health', (_req, res) => {
     res.set('Cache-Control', 'no-store');
     if (!isReady()) return res.status(503).json({ status: 'unavailable' });
@@ -74,15 +110,20 @@ function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDi
       },
     }));
     app.use('/assets', (_req, res) => res.set('Cache-Control', 'no-store').sendStatus(404));
+    app.get('/schemes/:id', createSchemePages(staticDir, siteOrigin));
     app.get('/{*page}', (_req, res) => {
       res.set('Cache-Control', 'no-cache').sendFile(path.join(staticDir, 'index.html'));
     });
   }
 
-  app.use((error, _req, res, next) => {
-    if (res.headersSent) return next(error);
+  app.use((error, _req, res, _next) => {
+    if (res.headersSent) return res.destroy();
     if (error.type === 'entity.parse.failed') return res.status(400).json({ error: 'Invalid JSON' });
     if (error.type === 'entity.too.large') return res.status(413).json({ error: 'Request too large' });
+    if (error.type === 'encoding.unsupported' || error.type === 'charset.unsupported') {
+      return res.status(415).json({ error: 'Unsupported request encoding' });
+    }
+    if (error instanceof URIError && error.status === 400) return res.status(400).json({ error: 'Invalid request path' });
     res.status(500).json({ error: 'Server error', requestId: res.get('X-Request-Id') });
   });
 

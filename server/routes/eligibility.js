@@ -6,6 +6,7 @@ const remainingEligibility = require('../remainingEligibility');
 const { rules, validProfile } = require('../profileEligibility');
 const { effectiveInputs, evaluateLegacy, evaluateProfile } = require('../../client/src/eligibilityMatcher.mjs');
 const { questionnaire, documentChecklists, resultDirections } = require('../questionnaire');
+const { hasOnlyFields } = require('../requestValidation');
 
 const router = express.Router();
 
@@ -47,7 +48,7 @@ function withNextSteps(slug, result) {
 router.post('/matches', requireAuth, (req, res) => {
   res.set('Cache-Control', 'no-store');
   const { answers = {}, profile = {} } = req.body ?? {};
-  if (!validAnswers(answers, profileQuestions) || !validProfile(profile)
+  if (!hasOnlyFields(req.body, ['answers', 'profile']) || !validAnswers(answers, profileQuestions) || !validProfile(profile)
     || (Object.keys(answers).length === 0 && Object.keys(profile).length === 0)) {
     return res.status(400).json({ error: 'Provide at least one recognized answer' });
   }
@@ -88,7 +89,8 @@ router.post('/:slug', (req, res) => {
   const { answers, partial } = req.body ?? {};
   const rule = schemes[slug];
   const questions = new Set(Object.keys(rule.criteria));
-  if (!validAnswers(answers, questions) || Object.keys(answers).length === 0
+  if (!hasOnlyFields(req.body, ['answers', 'partial']) || (partial !== undefined && typeof partial !== 'boolean')
+    || !validAnswers(answers, questions) || Object.keys(answers).length === 0
     || (partial !== true && Object.keys(answers).length !== questions.size)) {
     return res.status(400).json({ error: 'Provide an answer for each question' });
   }

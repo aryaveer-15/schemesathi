@@ -21,6 +21,7 @@ before(async () => {
   await writeFile(path.join(staticDir, 'assets', 'plain.js'), 'console.log("unhashed fixture");');
   const app = createApp({
     staticDir,
+    siteOrigin: 'https://schemes.example.org',
     origins: ['https://schemes.example.org'],
     isReady: () => ready,
     logger: { error: (message) => logs.push(JSON.parse(message)) },
@@ -37,15 +38,15 @@ after(async () => {
 
 test('serves SPA routes and keeps API 404s in JSON', async () => {
   const page = await fetch(`${base}/schemes/example`);
-  assert.equal(page.status, 200);
-  assert.match(await page.text(), /SchemeSathi test build/);
+  assert.equal(page.status, 404);
+  assert.match(await page.text(), /<title>SchemeSathi<\/title>/);
   const missing = await fetch(`${base}/api/unknown`);
   assert.equal(missing.status, 404);
   assert.match(missing.headers.get('content-type'), /application\/json/);
 });
 
 test('revalidates the app shell, serves compressed immutable hashes and rejects old chunks', async () => {
-  for (const route of ['/', '/schemes/example', '/index.html']) {
+  for (const route of ['/', '/schemes/pm-surya-ghar', '/index.html']) {
     const response = await fetch(`${base}${route}`);
     assert.equal(response.headers.get('cache-control'), 'no-cache', route);
     assert.equal(response.status, 200, route);
@@ -87,6 +88,9 @@ test('allows only configured cross-origin callers and reports readiness', async 
     assert.equal(unavailable.status, 503);
     assert.equal(unavailable.headers.get('cache-control'), 'no-store');
     assert.equal(logs.at(-1).requestId, unavailable.headers.get('x-request-id'));
+    const live = await fetch(`${base}/api/health/live`);
+    assert.equal(live.status, 200);
+    assert.deepEqual(await live.json(), { status: 'ok' });
   } finally {
     ready = true;
   }
@@ -172,4 +176,22 @@ test('serves a stable scheme slug alongside existing ObjectId URLs', async (cont
   assert.equal((await fetch(`${base}/api/schemes/unknown-scheme`)).status, 404);
   assert.equal((await fetch(`${base}/api/schemes/%24ne`)).status, 400);
   assert.deepEqual(lookedUp, [entry.slug, 'unknown-scheme']);
+});
+
+test('raw scheme HTML contains stable catalogue tags and unknown URLs return a generic app with 404', async () => {
+  const current = require('../catalog').find(({ slug }) => slug === 'pm-surya-ghar');
+  const response = await fetch(`${base}/schemes/${current.slug}`, { headers: { 'X-Forwarded-Host': 'untrusted.example' } });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-cache');
+  const html = await response.text();
+  assert.ok(html.includes('<title>' + current.title.en + ' | SchemeSathi</title>'));
+  assert.ok(html.includes('property="og:description" content="' + current.summary.en + '"'));
+  assert.ok(html.includes('property="og:url" content="https://schemes.example.org/schemes/pm-surya-ghar"'));
+  assert.ok(!html.includes('untrusted.example'));
+  const unknown = await fetch(`${base}/schemes/nonexistent-scheme`);
+  assert.equal(unknown.status, 404);
+  assert.equal(unknown.headers.get('cache-control'), 'no-cache');
+  const generic = await unknown.text();
+  assert.match(generic, /property="og:title" content="SchemeSathi"/);
+  assert.doesNotMatch(generic, /nonexistent-scheme|property="og:url"/);
 });

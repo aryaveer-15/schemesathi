@@ -25,7 +25,8 @@ export default function Schemes() {
   const query = (params.get('q') ?? '').slice(0, 240);
   const category = params.get('category') ?? '';
   const region = params.get('state') ?? '';
-  const filterKey = JSON.stringify([query, category, region]);
+  const suggested = (params.get('suggested') ?? '').slice(0, 8000);
+  const filterKey = JSON.stringify([query, category, region, suggested]);
   const [shown, setShown] = useState({ key: null, count: pageSize });
   const visibleCount = shown.key === filterKey ? shown.count : pageSize;
   const [attempt, setAttempt] = useState(0);
@@ -39,7 +40,8 @@ export default function Schemes() {
 
   function updateFilter(key, value) {
     const next = new URLSearchParams();
-    for (const [name, current] of [['q', query], ['category', category], ['state', region]]) {
+    for (const [name, current] of [['q', query], ['category', category], ['state', region], ['suggested', suggested]]) {
+      if (name === 'suggested' && key === 'q') continue;
       const updated = name === key ? value : current;
       if (updated) next.set(name, updated);
     }
@@ -83,10 +85,14 @@ export default function Schemes() {
     .map((scheme) => scheme.state))].sort(), [schemes]);
 
   const search = useMemo(() => createSchemeSearch(schemes, lang, t), [schemes, lang, t]);
-  const filtered = useMemo(() => search.find(query).filter((scheme) => (
-    (!category || scheme.category === category)
-    && (!region || scheme.level !== 'state' || scheme.state === region)
-  )), [search, query, category, region]);
+  const filtered = useMemo(() => {
+    const slugs = new Set(suggested.split(','));
+    return search.find(query).filter((scheme) => (
+      (!suggested || slugs.has(scheme.slug))
+      && (!category || scheme.category === category)
+      && (!region || scheme.level !== 'state' || scheme.state === region)
+    ));
+  }, [search, query, category, region, suggested]);
 
   return (
     <main className="page catalog-page">
@@ -137,7 +143,7 @@ export default function Schemes() {
       {!loading && !error && filtered.length === 0 ? (
         <section className="card feedback empty-state">
           <p role="status">{t('noSchemes')}</p>
-          {query || category || region ? (
+          {query || category || region || suggested ? (
             <button type="button" className="secondary-action" onClick={() => {
               editingQuery.current = false;
               searchInput.current.value = '';

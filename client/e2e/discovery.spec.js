@@ -87,3 +87,22 @@ test('chat links a named factual question to its official source and keeps input
   await page.reload();
   await expect(page.locator('.chat-turn')).toHaveCount(0);
 });
+
+test('chat links unanswered questions to catalogue-only search results', async ({ page }) => {
+  await page.route('**/api/schemes', (route) => route.fulfill({ json: catalog }));
+  await page.goto('/scheme-chat');
+  await page.locator('main summary').click();
+  await expect(page.locator('main details button').first()).toBeVisible();
+  await page.getByRole('textbox', { name: 'Your question' }).fill('PM ksan deadline 8675309');
+  await page.getByRole('button', { name: 'Send' }).click();
+  const reply = page.locator('.chat-message-answer').last();
+  await expect(reply).toContainText(unknownAnswer);
+  await expect(reply.getByRole('heading', { name: /PM-KISAN/ })).toBeVisible();
+  await expect(reply.getByRole('link', { name: 'Browse schemes' })).toHaveAttribute('href', '/schemes?suggested=pm-kisan');
+  await reply.getByRole('link', { name: 'Browse schemes' }).click();
+  await expect(page).toHaveURL(/\/schemes\?suggested=pm-kisan$/);
+  await expect(page.locator('.scheme-card')).toHaveCount(1);
+  await expect(page.locator('.scheme-card h2')).toContainText('PM-KISAN');
+  await page.reload();
+  await expect(page.locator('.scheme-card')).toHaveCount(1);
+});

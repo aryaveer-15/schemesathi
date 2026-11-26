@@ -65,9 +65,17 @@ test('chat gives approved navigation, bounded discovery, or an unknown answer', 
     assert.equal(reply.schemes.length, 4, query);
     assert.equal(reply.named, undefined, query);
   }
-  for (const query of ['Can you check my Aadhaar status?', 'student age', 'PM ksan deadline', 'How do I apply for an unknown scheme?']) {
+  for (const query of ['Can you check my Aadhaar status?', 'How do I apply for an unknown scheme?']) {
     assert.deepEqual(helpReply(query, t, search), { topic: 'fallback' }, query);
   }
   const empty = createSchemeSearch([], 'en', t);
   assert.deepEqual(helpReply('When is the AICTE Pragati deadline?', t, empty), { topic: 'fallback' });
+});
+
+test('unanswered chat prompts preserve uncertainty and pass catalogue slugs only', () => {
+  const reply = helpReply('PM ksan deadline 8675309', t, search);
+  assert.equal(reply.unsure, true);
+  assert.deepEqual(reply.suggested, ['pm-kisan']);
+  assert.deepEqual(reply.schemes.map(({ slug }) => slug), ['pm-kisan']);
+  assert.deepEqual(helpReply('?!', t, search), { topic: 'fallback' });
 });

@@ -21,13 +21,46 @@ In development the client uses `http://localhost:5000` by default. The productio
 
 ## Publish
 
-Build from the repository root with `docker build -t schemesathi .`. Configure a container host to start the image with the production `MONGO_URI` and a long random `JWT_SECRET` from its secret store. The image serves the frontend and API together on port 5000 by default. The host may override `PORT`. Use the host's HTTPS endpoint and run `npm run seed` once, using the production database settings, to add any missing catalog entries.
+### Environment variables
 
-Production uses the host's DNS resolver. If the MongoDB connection uses SRV records and the host resolver cannot resolve them, set `MONGO_DNS_SERVERS` to a comma-separated list of resolvers approved for your environment.
+| Variable | Required | Secret | Purpose |
+|---|---|---|---|
+| `MONGO_URI` | Yes | Yes | MongoDB connection string for the API, seed and catalogue import. |
+| `JWT_SECRET` | Yes | Yes | Random signing secret of at least 32 bytes in production. Keep the value across deploys to preserve existing sessions. |
+| `NODE_ENV` | Set by Docker | No | The image sets `production`, enabling serving the built client and HTTPS-only transport policy. |
+| `HOST` | No | No | Local default is loopback. The image listens on `0.0.0.0`. |
+| `PORT` | No | No | Local and Docker default is 5000. Render can supply its own value. |
+| `MONGO_DNS_SERVERS` | No | No | Comma-separated DNS resolver override for MongoDB SRV records. Production otherwise uses the host resolver. |
+| `CORS_ORIGINS` | No | No | Exact comma-separated origins when a separate frontend uses this API. Leave unset for same-origin hosting. |
+| `VITE_API_URL` | No | No | Browser-visible build-time API origin for a separately hosted client. The bundled production client uses the same origin. |
+| `TRUST_PROXY_HOPS` | No | No | Defaults to one on Render and zero elsewhere. Override only after confirming the fixed trusted ingress chain. |
+| `CSP_MODE` | No | No | Full CSP defaults to `report-only`. Use `enforce` after testing the deployed site. |
+| `PUBLIC_SITE_ORIGIN` | No | No | The confirmed HTTPS public origin for preview and canonical URLs. Defaults to Render's external URL on Render. |
+| `RENDER`, `RENDER_EXTERNAL_URL` | Provided by Render | No | Platform-provided hosting indicator and external URL. |
+| `PLAYWRIGHT_CHANNEL` | Test only | No | Set to `chrome` to run browser tests with installed Chrome. |
 
-Keep `CORS_ORIGINS` unset for same-origin hosting. For a separately hosted frontend, set it to the exact HTTPS frontend origins, comma separated, and set `VITE_API_URL` at frontend build time. Set `TRUST_PROXY_HOPS` only if the app is reachable exclusively through that many trusted proxy hops and the proxy normalizes forwarded headers. Login and registration share a 20-request limit per client in a 15-minute window. The counter is per instance. Deploy a single instance with the built-in store or configure a shared rate-limit store before scaling out.
+### Docker and Render
 
-Set a host health check on `GET /api/health`. It returns HTTP 503 when MongoDB is unavailable. Keep the container's stderr logs and configure alerts for repeated `http_failure` events with HTTP 5xx, health-check failures, and `database_connection_failed`. HTTP 429 log events show when the auth limit is applied. Use the response's `X-Request-Id` to correlate a request with its error log.
+From the repository root, with Docker Desktop running and a local `server/.env` pointing to a test MongoDB database, run these PowerShell commands.
+
+```powershell
+docker build --pull --tag schemesathi:pass7 .
+docker run --detach --rm --name schemesathi-pass7 --env-file .\server\.env -p 127.0.0.1:5000:5000 schemesathi:pass7
+Invoke-RestMethod http://127.0.0.1:5000/api/health
+docker exec schemesathi-pass7 id -u
+docker exec schemesathi-pass7 sh -c 'test ! -e /app/server/.env && test ! -d /app/server/node_modules/nodemon && test ! -d /app/client/node_modules'
+docker stop schemesathi-pass7
+```
+
+The container user ID must be nonzero. Use the terminal or Render logs to check startup if the health request fails. A container connecting to MongoDB on the Windows host needs a reachable host address rather than its own loopback interface.
+
+1. Push the reviewed feature branch, then merge it into the branch connected to Render. Confirm the Render service uses the repository Dockerfile and the root build context.
+2. Keep `MONGO_URI` and `JWT_SECRET` in the service's secret settings. No new variable is required for standard Render hosting. Keep the first deploy in CSP report-only mode. Set `PUBLIC_SITE_ORIGIN` only after confirming the public URL if it differs from the Render-provided origin.
+3. Set the Render health check to `/api/health`. It returns HTTP 503 while the MongoDB connection is unavailable. `/api/health/live` only confirms that HTTP is responding. Run the catalogue seed once for a new database to add missing entries.
+4. Smoke-test sign-in, the questionnaire, results, help chat, Urdu and a direct scheme link. Verify a known scheme has preview tags in the raw HTML and a missing scheme returns 404. From two real networks, confirm each has its own rate-limit counter before relying on it. Keep the one-hop setting only when the last Render hop supplies the client IP at the right of the forwarded chain and traffic reaches Express through that ingress.
+5. If deployment fails, use Render **Deploys → Rollback** to the previous successful build. Verify health and sign-in again. Revert the offending Git commit on the deployed branch before re-enabling automatic deploys. [Render rollback documentation](https://render.com/docs/rollbacks)
+
+Login and registration share 20 requests per client per 15 minutes. Auth reads allow 120 requests per 15 minutes and eligibility submissions allow 90 per minute. These counters are per process. Request logs contain method, fixed route pattern, status, duration and the response's `X-Request-Id`. They exclude request values, IP addresses and errors' internal messages.
 
 ## Maintain scheme information
 

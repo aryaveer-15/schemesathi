@@ -8,3 +8,10 @@
 server/test
 server/middle
 client/e2e
+**/.npmrc
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/*credentials*.json
+**/.git
