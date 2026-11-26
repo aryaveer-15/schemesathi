@@ -50,7 +50,7 @@ for (const { code, direction } of languages) {
     const odisha = { ...catalog.find(({ slug }) => slug === 'odisha-subhadra'), _id: 'odisha', eligibilityMode: 'profile' };
     await page.setViewportSize({ width: 360, height: 780 });
     await page.route('**/api/schemes', (route) => route.fulfill({ json: [entry, odisha] }));
-    await page.route('**/api/schemes/solar', (route) => route.fulfill({ json: entry }));
+    await page.route('**/api/schemes/pm-surya-ghar', (route) => route.fulfill({ json: entry }));
     await page.route(`**/api/eligibility/${slug}`, (route) => route.fulfill({
       json: route.request().method() === 'GET' ? legacy[slug] : {
         status: 'review',

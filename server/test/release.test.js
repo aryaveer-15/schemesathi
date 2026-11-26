@@ -155,3 +155,21 @@ test('scheme details expose a review date, an explicit unreviewed state and veri
     assert.equal(details.verificationKind, expectedKind, slug);
   }
 });
+
+test('serves a stable scheme slug alongside existing ObjectId URLs', async (context) => {
+  const entry = { _id: '64f000000000000000000001', slug: 'pm-surya-ghar' };
+  const lookedUp = [];
+  context.mock.method(Scheme, 'findOne', ({ slug }) => ({ lean: async () => {
+    lookedUp.push(slug);
+    return slug === entry.slug ? entry : null;
+  } }));
+  context.mock.method(Scheme, 'findById', (id) => ({ lean: async () => id === entry._id ? entry : null }));
+  const slugResponse = await fetch(`${base}/api/schemes/${entry.slug}`);
+  const legacyResponse = await fetch(`${base}/api/schemes/${entry._id}`);
+  assert.equal(slugResponse.status, 200);
+  assert.equal(legacyResponse.status, 200);
+  assert.deepEqual(await slugResponse.json(), await legacyResponse.json());
+  assert.equal((await fetch(`${base}/api/schemes/unknown-scheme`)).status, 404);
+  assert.equal((await fetch(`${base}/api/schemes/%24ne`)).status, 400);
+  assert.deepEqual(lookedUp, [entry.slug, 'unknown-scheme']);
+});

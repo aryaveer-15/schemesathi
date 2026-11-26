@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useLang } from '../useLang';
-import { localizedScheme, stateLabel } from '../schemeText';
+import { localizedScheme, schemePath, stateLabel } from '../schemeText';
+import { createSchemeSearch } from '../schemeSearch';
 import { schemeQuestions } from '../eligibilityContent';
 import SchemeBanner from '../SchemeBanner';
 import TranslationNotice from '../TranslationNotice';
@@ -16,11 +17,35 @@ export default function Schemes() {
   const [schemes, setSchemes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('');
-  const [region, setRegion] = useState('');
-  const [visibleCount, setVisibleCount] = useState(pageSize);
+  const [params, setParams] = useSearchParams();
+  const navigation = useNavigationType();
+  const location = useLocation();
+  const editingQuery = useRef(false);
+  const searchInput = useRef(null);
+  const query = (params.get('q') ?? '').slice(0, 240);
+  const category = params.get('category') ?? '';
+  const region = params.get('state') ?? '';
+  const filterKey = JSON.stringify([query, category, region]);
+  const [shown, setShown] = useState({ key: null, count: pageSize });
+  const visibleCount = shown.key === filterKey ? shown.count : pageSize;
   const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    if (navigation === 'POP') {
+      editingQuery.current = false;
+      searchInput.current.value = query;
+    }
+  }, [location.key, navigation, query]);
+
+  function updateFilter(key, value) {
+    const next = new URLSearchParams();
+    for (const [name, current] of [['q', query], ['category', category], ['state', region]]) {
+      const updated = name === key ? value : current;
+      if (updated) next.set(name, updated);
+    }
+    setParams(next, { replace: key === 'q' && editingQuery.current, preventScrollReset: true });
+    editingQuery.current = key === 'q';
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -57,20 +82,11 @@ export default function Schemes() {
     .filter((scheme) => scheme.level === 'state' && scheme.state && scheme.state !== 'All India')
     .map((scheme) => scheme.state))].sort(), [schemes]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().normalize('NFC').toLowerCase();
-    return schemes.filter((scheme) => {
-      if (category && scheme.category !== category) return false;
-      if (region && scheme.level === 'state' && scheme.state !== region) return false;
-      if (!q) return true;
-      const title = localizedScheme(scheme, 'title', lang);
-      const summary = localizedScheme(scheme, 'summary', lang);
-      const state = scheme.state || '';
-      const cat = scheme.category || '';
-      return [title, summary, state, stateLabel(state, t), cat, cat ? t(cat) : '', localizedScheme(scheme, 'title', 'en')]
-        .some((text) => text.normalize('NFC').toLowerCase().includes(q));
-    });
-  }, [schemes, query, category, region, lang, t]);
+  const search = useMemo(() => createSchemeSearch(schemes, lang, t), [schemes, lang, t]);
+  const filtered = useMemo(() => search.find(query).filter((scheme) => (
+    (!category || scheme.category === category)
+    && (!region || scheme.level !== 'state' || scheme.state === region)
+  )), [search, query, category, region]);
 
   return (
     <main className="page catalog-page">
@@ -84,8 +100,12 @@ export default function Schemes() {
           id="scheme-search"
           type="search"
           placeholder={t('search')}
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setVisibleCount(pageSize); }}
+          ref={searchInput}
+          defaultValue={query}
+          maxLength={240}
+          onChange={(e) => updateFilter('q', e.target.value)}
+          onBlur={() => { editingQuery.current = false; }}
+          onKeyDown={(e) => { if (e.key === 'Enter') editingQuery.current = false; }}
         />
         <label className="sr-only" htmlFor="scheme-category">
           {t('allCategories')}
@@ -93,7 +113,7 @@ export default function Schemes() {
         <select
           id="scheme-category"
           value={category}
-          onChange={(e) => { setCategory(e.target.value); setVisibleCount(pageSize); }}
+          onChange={(e) => updateFilter('category', e.target.value)}
         >
           <option value="">{t('allCategories')}</option>
           {categories.map((item) => (
@@ -103,10 +123,7 @@ export default function Schemes() {
           ))}
         </select>
         <label className="sr-only" htmlFor="scheme-region">{t('states')}</label>
-        <select id="scheme-region" value={region} onChange={(e) => {
-          setRegion(e.target.value);
-          setVisibleCount(pageSize);
-        }}>
+        <select id="scheme-region" value={region} onChange={(e) => updateFilter('state', e.target.value)}>
           <option value="">{t('allRegions')}</option>
           {regions.map((state) => <option key={state} value={state}>{stateLabel(state, t)}</option>)}
         </select>
@@ -122,10 +139,9 @@ export default function Schemes() {
           <p role="status">{t('noSchemes')}</p>
           {query || category || region ? (
             <button type="button" className="secondary-action" onClick={() => {
-              setQuery('');
-              setCategory('');
-              setRegion('');
-              setVisibleCount(pageSize);
+              editingQuery.current = false;
+              searchInput.current.value = '';
+              setParams({}, { preventScrollReset: true });
             }}>{t('browse')}</button>
           ) : (
             <button type="button" className="secondary-action"
@@ -145,7 +161,7 @@ export default function Schemes() {
                   <span>{t(scheme.category)}</span>
                   {scheme.state ? <span>{stateLabel(scheme.state, t)}</span> : null}
                 </p>
-                <h2><Link to={`/schemes/${scheme._id}`}>
+                <h2><Link to={schemePath(scheme)}>
                   {localizedScheme(scheme, 'title', lang)} <span className="direction-arrow" aria-hidden="true">→</span>
                 </Link></h2>
                 <p lang="en" dir="ltr">{localizedScheme(scheme, 'summary', lang)}</p>
@@ -161,7 +177,7 @@ export default function Schemes() {
 
       {!loading && filtered.length > visibleCount && (
         <p><button type="button" className="secondary-action catalog-more"
-          onClick={() => setVisibleCount((value) => value + pageSize)}>{t('moreSchemes')}</button></p>
+          onClick={() => setShown({ key: filterKey, count: visibleCount + pageSize })}>{t('moreSchemes')}</button></p>
       )}
 
       <p className="disclaimer" lang="en" dir="ltr">{getText('en', 'disclaimer')}</p>

@@ -20,7 +20,7 @@ export function LangProvider({ children }) {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = languages.find(({ code }) => code === lang)?.direction ?? 'ltr';
-    document.title = getText(lang, 'appName');
+    if (!document.head.querySelector('[data-scheme-metadata]')) document.title = getText(lang, 'appName');
     try {
       localStorage.setItem(LANGUAGE_KEY, lang);
     } catch {

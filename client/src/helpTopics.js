@@ -1,45 +1,41 @@
-import { schemeQuestions, schemeTitle } from './eligibilityContent.js';
-import { languages } from './locales/index.js';
+import { normalizeSearch } from './schemeSearch.js';
 
-const aliases = {
-  'atal-pension-yojana': ['atal pension', 'apy', 'अटल पेंशन'],
-  'sukanya-samriddhi-yojana': ['sukanya', 'sukanya samriddhi', 'सुकन्या'],
-  'pm-kisan': ['pm kisan', 'pmkisan', 'kisan samman nidhi', 'पीएम किसान'],
-  'ayushman-bharat-pmjay': ['ayushman', 'pmjay', 'pm jay', 'ayushman card', 'आयुष्मान'],
-  'pm-ujjwala-yojana': ['ujjwala', 'ujwala', 'pmuy', 'उज्ज्वला'],
-  'pm-awas-yojana': ['pmay', 'pm awas', 'awas yojana', 'पीएम आवास'],
-  'nsap-pension': ['nsap', 'national social assistance programme', 'samajik sahayata'],
-  'pm-mudra-yojana': ['mudra', 'pmmy', 'मुद्रा'],
+// Existing FAQ answers and navigation labels. Free-form text never becomes an answer.
+export const helpTopics = {
+  eligibility: {
+    label: 'eligibility', text: 'helpEligibilityAnswer',
+    links: [['/my-schemes', 'findSchemes'], ['/eligibility', 'eligibility']],
+    queries: ['check eligibility', 'how do i check eligibility', 'where can i check eligibility'],
+  },
+  apply: {
+    label: 'helpApply', text: 'helpApplyAnswer', links: [['/schemes', 'browse']],
+    queries: ['how do i apply', 'how to apply', 'आवेदन कैसे करें'],
+  },
+  account: {
+    label: 'register', text: 'helpAccountAnswer', links: [['/register', 'register'], ['/login', 'login']],
+    queries: ['account', 'login', 'sign in', 'register', 'sign up', 'how do i register for an account', 'how do i create an account'],
+  },
 };
 
-function normalize(text) {
-  return text.normalize('NFKC').toLowerCase()
-    .replace(/[\u200c\u200d]/g, '')
-    .replace(/[^\p{L}\p{M}\p{N}]+/gu, ' ').trim();
-}
+export const unknownAnswer = 'I don’t know the answer to that. Open the scheme list and follow the official link for the scheme you want to check.';
 
-const schemeTerms = Object.keys(schemeQuestions).map((slug) => [
-  slug,
-  [...aliases[slug], ...languages.map(({ code }) => schemeTitle(code, slug))].map(normalize),
-]);
+// Restrict suggestions to discovery phrases. A free-form question containing a
+// generic word such as "pension" must not be treated as a factual match.
+const discovery = /^(?:(?:which|what) (?:schemes?|scholarships?) (?:are there )?for |(?:find|show me|looking for) )?([\p{L}\p{M}\p{N}]+(?: [\p{L}\p{M}\p{N}]+){0,2})(?: ke liye kya scheme hai| के लिए कौन सी योजना है)?$/u;
+const factual = /(?:^| )(?:eligible|eligibility|qualify|amount|income|age|deadline|last date|documents?|status|aadhaar|paisa|aay|umar|patra|आय|उम्र|पात्र|पात्रता|दस्तावेज़|दस्तावेज|अंतिम|राशि|स्थिति)(?: |$)/u;
 
-export function helpReply(question, t) {
-  const text = ` ${normalize(question)} `;
-  const includes = (term) => {
-    const phrase = normalize(term);
-    return phrase && text.includes(` ${phrase} `);
-  };
-
-  const schemes = schemeTerms.filter(([, terms]) => terms.some(includes)).map(([slug]) => slug);
-  if (schemes.length) return { schemes };
-  if ([t('eligibility'), t('findSchemes'), 'eligible', 'eligibility', 'qualify', 'पात्रता'].some(includes)) {
-    return { topic: 'eligibility' };
+export function helpReply(question, t, search) {
+  const query = normalizeSearch(question);
+  for (const [topic, faq] of Object.entries(helpTopics)) {
+    const labels = topic === 'account' ? ['login', 'register'] : [faq.label];
+    if (faq.queries.includes(query) || labels.some((label) => normalizeSearch(t(label)) === query)) return { topic };
   }
-  if ([t('register'), t('login'), 'account', 'sign up', 'sign in', 'register', 'login'].some(includes)) {
-    return { topic: 'account' };
-  }
-  if ([t('helpApply'), 'apply', 'application', 'official site', 'आवेदन'].some(includes)) {
-    return { topic: 'apply' };
+
+  const schemes = search.named(query, { allowTypos: false });
+  if (schemes.length) return { schemes, named: true };
+  if (!factual.test(query) && discovery.test(query)) {
+    const suggestions = search.find(query).slice(0, 4);
+    if (suggestions.length) return { schemes: suggestions };
   }
   return { topic: 'fallback' };
 }

@@ -49,10 +49,14 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
-    if (!mongoose.isValidObjectId(req.params.id)) {
+    const { id } = req.params;
+    const objectId = mongoose.isValidObjectId(id);
+    const validSlug = id.length <= 150 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
+    if (!objectId && !validSlug) {
       return res.status(400).json({ error: 'Invalid scheme id' });
     }
-    const scheme = await Scheme.findById(req.params.id).lean();
+    const legacy = objectId ? await Scheme.findById(id).lean() : null;
+    const scheme = legacy ?? (validSlug ? await Scheme.findOne({ slug: id }).lean() : null);
     if (!scheme) return res.status(404).json({ error: 'Scheme not found' });
     const published = publishedScheme(scheme);
     if (Object.hasOwn(applicationDirections, scheme.slug)) published.application = applicationDirections[scheme.slug];

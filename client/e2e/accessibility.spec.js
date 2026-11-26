@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { expect, test } from '@playwright/test';
 import { dictionaries } from '../src/locales/index.js';
+import { unknownAnswer } from '../src/helpTopics.js';
 
 const require = createRequire(import.meta.url);
 const axeScript = require.resolve('axe-core/axe.min.js');
@@ -112,7 +113,7 @@ test('keyboard users can recover from account-validation errors and read only th
   await expect(announcement).toHaveText(dictionaries.en.helpApplyAnswer);
   await composer.fill('something unrelated');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(announcement).toHaveText(dictionaries.en.helpFallback);
+  await expect(announcement).toHaveText(unknownAnswer);
   await expect(page.locator('.chat-message-answer')).toHaveCount(2);
   await expect(page.locator('.chat-turn [aria-live]')).toHaveCount(0);
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import ApplicationDirections from '../ApplicationDirections';
@@ -8,7 +8,7 @@ import LoadingState from '../LoadingState';
 import { schemeQuestions } from '../eligibilityContent';
 import { getText } from '../locales';
 import { useLang } from '../useLang';
-import { localizedScheme, stateLabel } from '../schemeText';
+import { localizedScheme, schemePath, stateLabel } from '../schemeText';
 
 const verificationMessages = {
   list: 'verifyOfficialList',
@@ -26,6 +26,7 @@ function SchemeDetailsContent({ id }) {
   const [scheme, setScheme] = useState(null);
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
+  const article = useRef(null);
   const hasForm = scheme && Object.hasOwn(schemeQuestions, scheme.slug);
   const hasProfile = scheme?.eligibilityMode === 'profile';
   const publicAccess = scheme?.eligibilityMode === 'public';
@@ -43,6 +44,45 @@ function SchemeDetailsContent({ id }) {
     return () => { active = false; };
   }, [id, attempt]);
 
+  useEffect(() => {
+    if (!scheme) return;
+    const appName = getText(lang, 'appName');
+    const title = localizedScheme(scheme, 'title', lang) + ' | ' + appName;
+    const description = localizedScheme(scheme, 'summary', 'en');
+    const canonicalUrl = new URL(schemePath(scheme), window.location.origin).href;
+    const image = article.current?.querySelector('.scheme-banner img')?.src;
+    const canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    canonical.href = canonicalUrl;
+    const metadata = [
+      ['name', 'description', description],
+      ['property', 'og:type', 'website'],
+      ['property', 'og:title', title],
+      ['property', 'og:description', description],
+      ['property', 'og:url', canonicalUrl],
+      ['property', 'og:image', image],
+    ];
+    const nodes = metadata.filter(([, , content]) => content).map(([attribute, key, content]) => {
+      const meta = document.createElement('meta');
+      meta.setAttribute(attribute, key);
+      meta.content = content;
+      meta.dataset.schemeMetadata = '';
+      return meta;
+    });
+    const originalDescription = document.head.querySelector('meta[name="description"]:not([data-scheme-metadata])');
+    const originalContent = originalDescription?.getAttribute('content');
+    if (originalDescription) originalDescription.content = description;
+    const ownedNodes = nodes.filter((node) => !originalDescription || node.name !== 'description');
+    document.title = title;
+    document.head.append(canonical, ...ownedNodes);
+    return () => {
+      canonical.remove();
+      ownedNodes.forEach((node) => node.remove());
+      if (originalDescription) originalDescription.setAttribute('content', originalContent ?? '');
+      document.title = appName;
+    };
+  }, [scheme, lang]);
+
   return (
     <main className="page scheme-page">
       <p className="back-link"><Link to="/schemes">{t('backToSchemes')}</Link></p>
@@ -55,7 +95,7 @@ function SchemeDetailsContent({ id }) {
       </div>}
       {!error && !scheme && <LoadingState variant="detail" />}
       {scheme && (
-        <article className="scheme-detail" data-category={scheme.category}>
+        <article className="scheme-detail" data-category={scheme.category} ref={article}>
           <div className="scheme-overview">
             <div className="scheme-heading">
               <p className="meta">

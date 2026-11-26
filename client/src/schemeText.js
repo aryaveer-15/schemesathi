@@ -1,5 +1,9 @@
 import { additionalTranslations } from './locales/index.js';
 
+export function schemePath(scheme) {
+  return '/schemes/' + encodeURIComponent(scheme.slug || scheme._id);
+}
+
 const catalogKeys = new Map([
   ['atal-pension-yojana', 'atal'],
   ['sukanya-samriddhi-yojana', 'sukanya'],

@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { schemeQuestions } from '../src/eligibilityContent.js';
 import { additionalTranslations, dictionaries } from '../src/locales/index.js';
 import { localizedScheme, translatedScheme } from '../src/schemeText.js';
+import { unknownAnswer } from '../src/helpTopics.js';
 
 const catalog = createRequire(import.meta.url)('../../server/catalog.js');
 const { questionnaire, documentChecklists } = createRequire(import.meta.url)('../../server/questionnaire.js');
@@ -20,7 +21,7 @@ const scheme = {
 
 test('home, keyboard navigation, catalog and eligibility result', async ({ page }) => {
   await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme] }));
-  await page.route(`**/api/schemes/${scheme._id}`, (route) => route.fulfill({ json: scheme }));
+  await page.route(`**/api/schemes/${scheme.slug}`, (route) => route.fulfill({ json: scheme }));
   await page.route('**/api/eligibility/pm-ujjwala-yojana', async (route) => {
     if (route.request().method() === 'GET') return route.fulfill({ json: legacyChecks[scheme.slug] });
     expect(route.request().postDataJSON()).toEqual({ answers: { adultWoman: 'yes', lpg: 'no', deprivation: 'yes' } });
@@ -86,7 +87,7 @@ test('recovers from an unavailable API and handles missing schemes', async ({ pa
   await page.route('**/api/schemes', (route) => available
     ? route.fulfill({ json: [scheme] })
     : route.abort('failed'));
-  await page.route(`**/api/schemes/${scheme._id}`, (route) => route.fulfill({ status: 404, json: {} }));
+  await page.route(`**/api/schemes/${scheme.slug}`, (route) => route.fulfill({ status: 404, json: {} }));
   await page.goto('/schemes');
   await expect(page.getByRole('alert')).toContainText('Could not load');
   available = true;
@@ -245,7 +246,7 @@ test('guest help chat shows official scheme links without sending chat messages'
   await expect(page.getByRole('link', { name: 'Visit the official scheme website' })).toHaveAttribute('href', scheme.sourceUrl);
   await page.getByLabel('Your question', { exact: true }).fill('Something unrelated');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.locator('.chat-message-answer').getByText('Choose a topic below or type one of the listed scheme names.')).toBeVisible();
+  await expect(page.locator('.chat-message-answer').getByText(unknownAnswer)).toBeVisible();
   expect(network.filter(([method, path]) => method !== 'GET' || path.startsWith('/api/chat'))).toEqual([]);
 });
 
@@ -266,7 +267,7 @@ test('state filters retain national listings and show official verification for 
   };
   const other = { ...stateScheme, _id: 'xyz', slug: 'karnataka-sample', title: { en: 'Karnataka scheme' }, state: 'Karnataka' };
   await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme, stateScheme, other] }));
-  await page.route('**/api/schemes/abc', (route) => route.fulfill({ json: stateScheme }));
+  await page.route('**/api/schemes/odisha-sample', (route) => route.fulfill({ json: stateScheme }));
   await page.goto('/schemes');
   await page.getByLabel('All states and union territories', { exact: true }).selectOption('Odisha');
   await expect(page.getByRole('link', { name: scheme.title.en })).toBeVisible();
