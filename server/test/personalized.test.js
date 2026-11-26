@@ -200,3 +200,18 @@ test('all maintained listings return a result, with sourced questions and direct
   assert.equal(odisha.status, 'review');
   assert.match(odisha.verification, /Mo Seva Kendra/);
 });
+
+test('profile inferences take precedence only when they supply a scheme answer', async () => {
+  const answers = { pensionAge: 'yes', housingIncome: 'yes', urban: 'yes', citizen: 'yes' };
+  const response = await post('/eligibility/matches', {
+    answers,
+    profile: { age: 40, income: 900001, area: 'rural', citizen: 'unknown', savings: 'yes', bankAccount: 'no' },
+  });
+  assert.equal(response.status, 200);
+  const { effectiveAnswers, results } = await response.json();
+  assert.deepEqual(effectiveAnswers, {
+    pensionAge: 'yes', housingIncome: 'no', urban: 'no', citizen: 'unknown', savings: 'yes',
+  });
+  const janDhan = results.find(({ slug }) => slug === 'pmjdy');
+  assert.equal(janDhan.checks.find(({ key }) => key === 'bankAccount').status, 'unmatched');
+});

@@ -6,6 +6,7 @@ import { eligibilityText, schemeQuestions, schemeScope, schemeTitle } from '../e
 import { localizedScheme } from '../schemeText';
 import { useAuth } from '../useAuth';
 import { useLang } from '../useLang';
+import { schemeQuestionSources } from '../schemeQuestionSources';
 
 const statuses = ['matched', 'review', 'unmatched'];
 const options = ['yes', 'no', 'unknown'];
@@ -36,7 +37,7 @@ const profileSections = [
   {
     title: 'farmerPensionScheme',
     fields: ['smallFarmRecord', 'farmerPensionExclusion'],
-    sourceUrl: 'https://www.pib.gov.in/PressNoteDetails.aspx?ModuleId=3&NoteId=159959&lang=1&reg=48',
+    sourceUrl: schemeQuestionSources['pm-kisan-maandhan'],
   },
   { title: 'traderPensionScheme', fields: ['traderWork', 'traderTurnover', 'traderExclusion'] },
   { title: 'childSchemes', fields: ['minorAge', 'vatsalyaGuardian', 'vatsalyaCitizenship', 'schoolScreening'] },
@@ -48,7 +49,7 @@ const profileSections = [
   { title: 'shaktiScheme', fields: ['shaktiResident', 'shaktiPassenger', 'shaktiService'] },
   { title: 'educationLoanScheme', fields: ['educationLoanAdmission'] },
   { title: 'artisanScheme', fields: ['artisanTrade', 'artisanFamilyExclusion', 'artisanCreditExclusion'],
-    sourceUrl: 'https://www.pib.gov.in/PressNoteDetails.aspx?ModuleId=3&NoteId=159998&id=159998&lang=1&reg=3' },
+    sourceUrl: schemeQuestionSources['pm-vishwakarma'] },
   { title: 'cropInsuranceScheme', fields: ['cropInterest', 'cropNotification'] },
   { title: 'ruralHousingScheme', fields: ['ruralHousingList'] },
   { title: 'streetVendorScheme', fields: ['streetVendor', 'vendorCredentials'] },

@@ -19,6 +19,7 @@ const schemeSchema = new mongoose.Schema(
     state: { type: String, default: 'All India' },
     sourceUrl: { type: String, default: '' },
     sourceDataset: { type: String, default: '' },
+    lastVerifiedAt: { type: Date, default: null },
     eligibilityRequirements: {
       type: [new mongoose.Schema(translationFields, { _id: false })],
       default: undefined,

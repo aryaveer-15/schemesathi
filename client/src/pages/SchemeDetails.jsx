@@ -7,6 +7,12 @@ import { schemeQuestions } from '../eligibilityContent';
 import { useLang } from '../useLang';
 import { localizedScheme } from '../schemeText';
 
+const verificationMessages = {
+  list: 'verifyOfficialList',
+  local: 'verifyLocally',
+  'list-and-local': 'verifyListAndLocally',
+};
+
 export default function SchemeDetails() {
   const { id } = useParams();
   return <SchemeDetailsContent key={id} id={id} />;
@@ -20,6 +26,9 @@ function SchemeDetailsContent({ id }) {
   const hasForm = scheme && Object.hasOwn(schemeQuestions, scheme.slug);
   const hasProfile = scheme?.eligibilityMode === 'profile';
   const publicAccess = scheme?.eligibilityMode === 'public';
+  const verifiedAt = scheme?.lastVerifiedAt ? new Date(scheme.lastVerifiedAt) : null;
+  const verifiedDate = verifiedAt && Number.isFinite(verifiedAt.getTime()) ? verifiedAt : null;
+  const verificationMessage = verificationMessages[scheme?.verificationKind];
 
   useEffect(() => {
     let active = true;
@@ -51,6 +60,15 @@ function SchemeDetailsContent({ id }) {
             {scheme.state && <span>{scheme.state === 'All India' ? t('allIndia') : scheme.state}</span>}
           </p>
           <p>{localizedScheme(scheme, 'summary', lang)}</p>
+          <p>
+            {t('lastVerified')}{' · '}
+            {verifiedDate
+              ? <time dateTime={verifiedDate.toISOString().slice(0, 10)}>
+                {new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeZone: 'UTC' }).format(verifiedDate)}
+              </time>
+              : t('verificationPending')}
+          </p>
+          {verificationMessage && <p><strong>{t(verificationMessage)}</strong></p>}
           {scheme.eligibilityRequirements?.length > 0 && (
             <section aria-labelledby="scheme-requirements">
               <h2 id="scheme-requirements">{t('eligibilityRequirements')}</h2>

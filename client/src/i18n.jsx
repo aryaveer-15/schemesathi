@@ -28,6 +28,11 @@ const translations = {
     "social-security": "Social security",
     backToSchemes: "Back to schemes",
     officialScheme: "Visit the official scheme website",
+    lastVerified: 'Last verified',
+    verificationPending: 'Pending review',
+    verifyOfficialList: 'Check the official list or portal for the eligibility route that applies to you.',
+    verifyLocally: 'Confirm your eligibility with the relevant local office or institution.',
+    verifyListAndLocally: 'Check the official list and confirm your eligibility with the relevant local office.',
     schemeMissing: "Scheme not found",
     loadFailed: "Could not load the schemes. Try again.",
     loginFailed: "Could not log in. Try again.",
@@ -45,7 +50,7 @@ const translations = {
     loading: 'Loading',
     noSchemes: 'No schemes found',
     disclaimer:
-      'Information only. Verify on the official portal before applying.',
+      'This is preliminary guidance. The responsible authority makes the final decision. Check the official portal before applying.',
   },
   hi: {
     appName: 'स्कीमसाथी',

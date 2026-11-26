@@ -58,6 +58,23 @@ test('home, keyboard navigation, catalog and eligibility result', async ({ page 
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
+test('scheme details show the last review and where users must verify eligibility', async ({ page }) => {
+  let lastVerifiedAt = null;
+  let verificationKind = 'list-and-local';
+  await page.route(`**/api/schemes/${scheme._id}`, (route) =>
+    route.fulfill({ json: { ...scheme, lastVerifiedAt, verificationKind } }));
+  await page.goto(`/schemes/${scheme._id}`);
+  await expect(page.getByText('Last verified · Pending review')).toBeVisible();
+  await expect(page.getByText('Check the official list and confirm your eligibility with the relevant local office.')).toBeVisible();
+
+  lastVerifiedAt = '2026-11-25T00:00:00.000Z';
+  verificationKind = null;
+  await page.reload();
+  await expect(page.locator('time')).toHaveAttribute('datetime', '2026-11-25');
+  await expect(page.getByText('Last verified', { exact: false })).toContainText('Nov 25, 2026');
+  await expect(page.getByText('Check the official list and confirm your eligibility with the relevant local office.')).toHaveCount(0);
+});
+
 test('recovers from an unavailable API and handles missing schemes', async ({ page }) => {
   let available = false;
   await page.route('**/api/schemes', (route) => available

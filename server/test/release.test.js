@@ -107,3 +107,24 @@ test('publishes current catalog content for existing scheme IDs and searches it'
   const list = await (await fetch(`${base}/api/schemes`)).json();
   assert.deepEqual(list.find((entry) => entry.slug === custom.slug), custom);
 });
+
+test('scheme details expose a review date, an explicit unreviewed state and verification notes', async (context) => {
+  const id = '64f000000000000000000001';
+  const verified = new Date('2026-11-25T00:00:00.000Z');
+  assert.equal(new Scheme().lastVerifiedAt, null);
+  let stored;
+  context.mock.method(Scheme, 'findById', () => ({ lean: async () => stored }));
+  for (const [slug, date, expectedKind] of [
+    ['pm-awas-gramin', undefined, 'list-and-local'],
+    ['ayushman-bharat-pmjay', verified, 'list'],
+    ['janani-suraksha', null, 'local'],
+    ['jan-aushadhi', undefined, null],
+  ]) {
+    stored = { _id: id, slug, lastVerifiedAt: date, updatedAt: verified };
+    const response = await fetch(`${base}/api/schemes/${id}`);
+    assert.equal(response.status, 200);
+    const details = await response.json();
+    assert.equal(details.lastVerifiedAt, date?.toISOString() ?? null, slug);
+    assert.equal(details.verificationKind, expectedKind, slug);
+  }
+});
