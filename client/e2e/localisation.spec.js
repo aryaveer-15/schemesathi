@@ -83,7 +83,10 @@ for (const { code, direction } of languages) {
     await page.getByRole('link', { name: localizedScheme(entry, 'title', code) }).click();
     await expect(page.getByRole('region', { name: copy.eligibilityRequirements })).toContainText(sourceScheme.eligibilityRequirements[0].en);
     await expect(page.getByRole('link', { name: copy.openOfficialPortal })).toHaveAttribute('href', entry.application.url);
-    await expect(page.getByText(entry.application.online, { exact: true })).toHaveAttribute('lang', 'en');
+    const applicationCopy = page.getByText(entry.application.online, { exact: true });
+    await expect(applicationCopy).toHaveAttribute('lang', 'en');
+    await expect(applicationCopy).toHaveAttribute('dir', 'ltr');
+    await expect(applicationCopy.getByRole('link')).toHaveCount(0);
     await expect(page.locator('main .translation-note')).toHaveCount(code === 'en' ? 0 : 1);
     if (code !== 'en') await expect(page.getByText(copy.translationUnderReview)).toBeVisible();
     await expectNoClipping(page);

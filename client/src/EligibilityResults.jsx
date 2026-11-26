@@ -69,19 +69,20 @@ export default function EligibilityResults({ data, entries, onEdit, heading, sin
       <TranslationNotice />
       <p lang="en" dir="ltr">{english('preliminaryResultNotice')}</p>
       <div className="wizard-actions result-controls">
-        <button type="button" onClick={onEdit}>{t('editAnswers')}</button>
-        <button type="button" onClick={() => window.print()}>{t('printResults')}</button>
+        <button type="button" className="primary-action" onClick={onEdit}>{t('editAnswers')}</button>
+        <button type="button" className="secondary-action" onClick={() => window.print()}>{t('printResults')}</button>
         {shareText && (
-          <button type="button" aria-expanded={shareOpen} aria-controls="scheme-share-text"
+          <button type="button" className="secondary-action" aria-expanded={shareOpen} aria-controls="scheme-share-text"
             onClick={() => { setShareOpen(!shareOpen); setCopied(false); }}>{t('shareResults')}</button>
         )}
       </div>
       <div className="result-controls share-results" id="scheme-share-text" hidden={!shareOpen}>
         <label htmlFor="shared-schemes">{t('shareOnlySchemes')}</label>
         <textarea id="shared-schemes" rows={5} readOnly value={shareText} onFocus={(event) => event.target.select()} />
-        <button type="button" onClick={copyResults}>{t('copyResults')}</button>
+        <button type="button" className="secondary-action" onClick={copyResults}>{t('copyResults')}</button>
         <p role="status">{copied && t('resultsCopied')}</p>
       </div>
+      {!results.length && <p className="card empty-state" role="status">{t('noSchemes')}</p>}
       {buckets.map(([bucket, label]) => {
         const group = results.filter((result) => result.bucket === bucket);
         if (!group.length) return null;
@@ -94,7 +95,7 @@ export default function EligibilityResults({ data, entries, onEdit, heading, sin
               const scope = schemeScope(entry.slug);
               const note = { list: 'verifyOfficialList', local: 'verifyLocally', 'list-and-local': 'verifyListAndLocally' }[entry.verificationKind];
               return (
-                <article className="card match-result-card" key={entry.slug}>
+                <article className="match-result-card" key={entry.slug}>
                   <h4>{title}</h4>
                   {scope && <p lang="en" dir="ltr">{scope}</p>}
                   {bucket === 'public' && <p lang="en" dir="ltr">{english('publicSchemeAccess')}</p>}
@@ -130,7 +131,12 @@ export default function EligibilityResults({ data, entries, onEdit, heading, sin
           </section>
         );
       })}
-      {!single && <p><span lang="en" dir="ltr">{english('matchCoverage')}</span> <Link to="/schemes">{t('browse')}</Link></p>}
+      {!single && (
+        <div className="result-coverage">
+          <p lang="en" dir="ltr">{english('matchCoverage')}</p>
+          <p><Link to="/schemes">{t('browse')}</Link></p>
+        </div>
+      )}
     </section>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import EligibilityQuestionnaire from '../EligibilityQuestionnaire';
+import LoadingState from '../LoadingState';
 import { useAuth } from '../useAuth';
 import { useLang } from '../useLang';
 
@@ -40,10 +41,10 @@ export default function FindSchemes() {
       <h1>{t('findSchemes')}</h1>
       <p>{t('guidedMatchIntro')}</p>
       {failed ? (
-        <p className="alert" role="alert">{t('extraChecksFailed')}{' '}
+        <div className="alert feedback" role="alert"><p>{t('extraChecksFailed')}</p>
           <button type="button" onClick={() => { setFailed(false); setAttempt(attempt + 1); }}>{t('retry')}</button>
-        </p>
-      ) : !entries ? <p role="status">{t('loading')}…</p> : (
+        </div>
+      ) : !entries ? <LoadingState variant="questionnaire" /> : (
         <EligibilityQuestionnaire key={requestedScheme} entries={entries} requestedScheme={requestedScheme} onCheck={check} />
       )}
     </main>

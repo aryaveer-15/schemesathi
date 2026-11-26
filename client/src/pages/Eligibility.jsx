@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { eligibilityText, schemeQuestions, schemeTitle } from '../eligibilityContent';
 import EligibilityQuestionnaire from '../EligibilityQuestionnaire';
+import LoadingState from '../LoadingState';
 import { useLang } from '../useLang';
 
 const schemeOptions = Object.keys(schemeQuestions);
@@ -56,10 +57,10 @@ function EligibilityForm({ initialSlug }) {
         </select>
       </label>
       {failed ? (
-        <p className="alert" role="alert">{eligibilityText(lang, 'failed')}{' '}
+        <div className="alert feedback" role="alert"><p>{eligibilityText(lang, 'failed')}</p>
           <button type="button" onClick={() => { setFailed(false); setAttempt(attempt + 1); }}>{t('retry')}</button>
-        </p>
-      ) : entry?.slug !== slug ? <p role="status">{t('loading')}…</p> : (
+        </div>
+      ) : entry?.slug !== slug ? <LoadingState variant="questionnaire" /> : (
         <EligibilityQuestionnaire key={slug} entries={[entry]} onCheck={check} single />
       )}
     </main>

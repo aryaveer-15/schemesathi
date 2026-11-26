@@ -50,6 +50,28 @@ const categoryPhotos = new Map([
   ['other', publicServices],
 ]);
 
+const descriptions = new Map([
+  [agriculture, 'Two people examining a plant in a field'],
+  [employment, 'A woman sewing patterned fabric while others work nearby'],
+  [energy, 'A technician showing a family the solar panels on their roof'],
+  [finance, 'Two people discussing paperwork across a counter'],
+  [health, 'A clinician checking a patient’s blood pressure'],
+  [housing, 'Two people sitting together on a porch outside a home'],
+  [maternity, 'A health worker talking to a woman holding a baby'],
+  [publicServices, 'A worker at a service counter helping a group with paperwork'],
+  [socialSecurity, 'Two older adults and a woman looking at a form together'],
+  [training, 'An instructor and three learners working on a mechanical part'],
+  [women, 'A group of women talking around a table with papers'],
+  [pragati, 'Two students working on an electronics project at a bench'],
+  [saksham, 'A student in a wheelchair and a classmate working on an electronics project'],
+  [swanath, 'A student writing at a desk beside a classroom window'],
+  [nationalMeansMerit, 'Two school students studying together outdoors'],
+  [pmUsp, 'Three students reading and taking notes together outdoors'],
+  [pudhumaiPenn, 'Two students carrying notebooks through a college corridor'],
+  [kanyashree, 'Two students sharing a book on a school walkway'],
+  [swamiVivekananda, 'A student writing at a library table beside an open book'],
+]);
+
 export default function SchemeBanner({ slug, category, featured = false }) {
   const source = schemePhotos.get(slug) ?? categoryPhotos.get(category) ?? publicServices;
 
@@ -59,7 +81,9 @@ export default function SchemeBanner({ slug, category, featured = false }) {
         src={source}
         width="1280"
         height="640"
-        alt=""
+        alt={descriptions.get(source)}
+        lang="en"
+        dir="ltr"
         decoding="async"
         loading={featured ? 'eager' : 'lazy'}
         fetchPriority={featured ? 'high' : undefined}

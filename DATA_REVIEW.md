@@ -179,3 +179,54 @@ No individual eligibility question was rewritten. The guided all-scheme flow use
 | --- | --- |
 | Annual household income (₹) | Is your annual household income ₹9 lakh or less? |
 | Area you live in | Does your family live in an urban area covered by PMAY-U 2.0? |
+
+## Pass 4 banner review
+
+All 51 listings have a banner. They use 18 distinct photos. A nineteenth photo is available as the generic fallback. Every asset is WebP at 1280 by 640 pixels, from 74,582 to 139,060 bytes. Catalogue images load lazily. Scheme details give their primary image eager loading and high priority. All images expose intrinsic width and height and English alternative text that describes the scene. No photo files changed. Catalogue thumbnails still request the full WebP, which can cost extra data on a slow connection.
+
+### Banner relevance
+
+These listings use scenes that may not communicate the actual programme or may suggest a narrower programme than exists. Other category photos also illustrate a topic and carry no evidence about eligibility or actual participants.
+
+| Scheme or schemes | Existing scene and relevance concern |
+| --- | --- |
+| PM Ujjwala, Sukanya Samriddhi, SUBHADRA, Ladki Bahin and Karnataka Shakti | A group of women meeting at a table. The photograph does not show an LPG connection, a child savings account, cash assistance or bus travel. |
+| PMJJBY, PMSBY and NPS Vatsalya | Adults handling paperwork at a counter. The scene does not distinguish life insurance, accident insurance or retirement savings for minors. |
+| PM SVANidhi | A sewing workshop, with no street vending shown. |
+| PM MUDRA and PMEGP | The sewing workshop illustrates one possible enterprise. It does not identify the credit or new-business support routes. |
+| PM Internship, NITI Internship and DPIIT Internship | A mechanical workshop suggests technical training. It misses corporate, public-policy and other placements. |
+| PM-SYM, PM-KMY and NPS for Traders | Older adults looking at paperwork. It can suggest the pension recipient's age rather than the enrolment age, and it does not show work, farming or trading. |
+| Ayushman Bharat PM-JAY and Tamil Nadu CMCHIS | A blood-pressure check suggests a routine consultation rather than the insurance or hospital pathway. |
+| Rashtriya Bal Swasthya Karyakram, PM National Dialysis, Jan Aushadhi, Ni-kshay Poshan and Mission Indradhanush | The same adult blood-pressure check does not show child screening, dialysis, a pharmacy, tuberculosis support or vaccination. |
+| PM-Vidyalaxmi | Students studying together in the same photo as PM-USP CSSS. The photo does not distinguish an education-loan route from a scholarship. |
+| AICTE Swanath | A student writing in a classroom. The scene has no clear reference to technical study or the scholarship pathway. |
+| PMFBY, Kisan Credit Card and Soil Health Card | Two people examining a crop. The photograph does not show an insurance assessment, credit or soil sampling. |
+| PMAY Urban and PMAY Gramin | The same porch photo identifies housing. It gives no indication of the distinction between urban and rural programmes. |
+
+### Image attribution and licence
+
+The two commits below identify when these files entered the repository. The repository has no image-level credit or licence record for any of the 19 files. Their external source and licence could not be determined from the repository.
+
+| Asset directory | Files without confirmed attribution or licence |
+| --- | --- |
+| `client/src/assets/scholarships/` · commit `bd0bf50` | `aicte-pragati.webp`, `aicte-saksham.webp`, `aicte-swanath.webp`, `national-means-merit-scholarship.webp`, `pm-usp-college-scholarship.webp`, `tn-pudhumai-penn.webp`, `wb-kanyashree.webp`, `wb-svmcm.webp` |
+| `client/src/assets/schemes/` · commit `c82f8c6` | `agriculture.webp`, `employment.webp`, `energy.webp`, `finance.webp`, `health.webp`, `housing.webp`, `maternity.webp`, `public.webp`, `social-security.webp`, `training.webp`, `women.webp` |
+
+## Pass 4 visual and UX review
+
+Paired screenshots cover the homepage, catalogue, PM Surya Ghar detail, signed-in questionnaire and grouped results at 360 px and 1280 px in English, Hindi and Urdu. The captures use the same catalogue fixture and synthetic answers in Chrome. The catalogue capture shows the initial viewport. The other pages use full-page captures.
+
+The light and dark palette checks use 4.5:1 for text and 3:1 for control boundaries and focus indicators. The lowest tested text ratio is 5.66:1 and the lowest tested control ratio is 4.42:1. These checks cover the site styles. Browser-native menus, platform fonts and external portals can vary. [W3C text contrast](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) · [W3C non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
+
+| Design change or remaining concern | Effect on returning users |
+| --- | --- |
+| Solid violet homepage panel, serif English headlines and flat joined-hands mark | The main action stays prominent. The Help chat prompts now read as a list beside the introduction on desktop and below it on mobile. They may require scrolling on smaller screens. |
+| Photo rows replace the three-column catalogue cards | Longer titles and summaries have clearer scanning order. The single column can make long lists more vertical. Filter values, ordering and paging stay the same. |
+| Scheme details lead with the title and verification date | The existing next steps sit beside eligibility on wide screens and below it on narrow screens. Users who relied on the image at the top or expect the application link first will see a different order. |
+| Scheme photo descriptions and shared scenes | Screen readers announce what is shown in English. The descriptions cannot establish programme participation or location. Banner relevance and provenance gaps are listed above. |
+| Questionnaire control hierarchy | The main next action uses violet. Back and early results use outline buttons. Their labels, keyboard order and behavior are unchanged. Native menus can shorten long labels. |
+| Results grouped as divided rows within each category | Status headings are visible in text and colour. Green could still be read as approval, so the preliminary notice stays above the groups. The group order and rules are unchanged. |
+| Reasons and documents remain expandable | Users may overlook collapsed details in long results. The existing expanded state for explicit uncertainty or a single-scheme check stays in place. Printing retains the existing disclosure state. |
+| Official actions and coverage links use separate lines | This keeps Urdu and English in their correct reading order. Longer result rows can require more scrolling. |
+| Loading placeholders and recovery panels | Loading is announced once and placeholders stay static. Existing plain-language error messages are paired with the relevant retry or browse action. The catalogue's Browse schemes recovery clears the search and both filters. |
+| Typography, font fallbacks and reduced motion | Page styles use device font stacks. Added web-font transfer is 0 bytes. Chromium at 360 px exercises all 11 languages. Different installed fonts, browser zoom and native controls may still affect wrapping. |

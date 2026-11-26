@@ -93,9 +93,9 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
 
   return (
     <form className="card eligibility-wizard" noValidate onSubmit={advance}>
-      <p id="question-progress">{progress}</p>
+      <p id="question-progress" className="wizard-progress-label">{progress}</p>
       <progress aria-labelledby="question-progress" max={total} value={index + 1} />
-      <p>{isShared ? t('profileDetails') : entryTitle(current.entry, lang)}</p>
+      <p className="wizard-context">{isShared ? t('profileDetails') : entryTitle(current.entry, lang)}</p>
       <TranslationNotice />
       <h2 ref={heading} tabIndex={-1} id="question-heading" lang="en" dir="ltr">{question}</h2>
       {scope && <p className="status" lang="en" dir="ltr">{scope}</p>}
@@ -132,10 +132,10 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
         </p>}
         {failed && <p className="alert" role="alert">{single ? local('failed') : t('matchFailed')}</p>}
         <div className="wizard-actions">
-          {index > 0 && <button type="button" onClick={() => visit(index - 1, records)}>{t('previousQuestion')}</button>}
+          {index > 0 && <button className="secondary-action" type="button" onClick={() => visit(index - 1, records)}>{t('previousQuestion')}</button>}
           <button type="submit">{busy ? t('loading') : last ? t(single ? 'eligibility' : 'showMatches') : t('nextQuestion')}</button>
           {!single && !last && (index > 0 || draft !== '') && (
-            <button type="button" onClick={(event) => advance(event, true)}>{t('showMatches')}</button>
+            <button className="secondary-action" type="button" onClick={(event) => advance(event, true)}>{t('showMatches')}</button>
           )}
         </div>
       </fieldset>

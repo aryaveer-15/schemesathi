@@ -6,6 +6,7 @@ import { localizedScheme, stateLabel } from '../schemeText';
 import { schemeQuestions } from '../eligibilityContent';
 import SchemeBanner from '../SchemeBanner';
 import TranslationNotice from '../TranslationNotice';
+import LoadingState from '../LoadingState';
 import { getText } from '../locales';
 
 const pageSize = 24;
@@ -72,7 +73,7 @@ export default function Schemes() {
   }, [schemes, query, category, region, lang, t]);
 
   return (
-    <main className="page">
+    <main className="page catalog-page">
       <h1>{t('schemes')}</h1>
 
       <div className="toolbar catalog-toolbar">
@@ -111,33 +112,48 @@ export default function Schemes() {
         </select>
       </div>
 
-      {loading ? <p className="status">{t('loading')}…</p> : null}
-      {!loading && error ? <p className="alert" role="alert">
-        {t('loadFailed')}
+      {loading ? <LoadingState variant="catalog" /> : null}
+      {!loading && error ? <div className="alert feedback" role="alert">
+        <p>{t('loadFailed')}</p>
         <button type="button" onClick={() => setAttempt((value) => value + 1)}>{t('retry')}</button>
-      </p> : null}
+      </div> : null}
       {!loading && !error && filtered.length === 0 ? (
-        <p className="status">{t('noSchemes')}</p>
+        <section className="card feedback empty-state">
+          <p role="status">{t('noSchemes')}</p>
+          {query || category || region ? (
+            <button type="button" className="secondary-action" onClick={() => {
+              setQuery('');
+              setCategory('');
+              setRegion('');
+              setVisibleCount(pageSize);
+            }}>{t('browse')}</button>
+          ) : (
+            <button type="button" className="secondary-action"
+              onClick={() => setAttempt((value) => value + 1)}>{t('retry')}</button>
+          )}
+        </section>
       ) : null}
 
       <TranslationNotice />
       {!loading && filtered.length > 0 ? (
-        <ul className="grid">
+        <ul className="scheme-list">
           {filtered.slice(0, visibleCount).map((scheme) => (
-            <li key={scheme._id} className="card scheme-card" data-category={scheme.category}>
+            <li key={scheme._id} className="scheme-card" data-category={scheme.category}>
               <SchemeBanner slug={scheme.slug} category={scheme.category} />
-              <p className="meta">
-                <span>{t(scheme.category)}</span>
-                {scheme.state ? <span>{stateLabel(scheme.state, t)}</span> : null}
-              </p>
-              <h2><Link to={`/schemes/${scheme._id}`}>
-                {localizedScheme(scheme, 'title', lang)} <span className="direction-arrow" aria-hidden="true">→</span>
-              </Link></h2>
-              <p lang="en" dir="ltr">{localizedScheme(scheme, 'summary', lang)}</p>
-              {scheme.eligibilityMode === 'public' && <p className="muted" lang="en" dir="ltr">{getText('en', 'publicSchemeAccess')}</p>}
-              {!scheme.eligibilityMode && !Object.hasOwn(schemeQuestions, scheme.slug) && (
-                <p className="muted catalog-coverage">{t('officialCheck')}</p>
-              )}
+              <div className="scheme-card-copy">
+                <p className="meta">
+                  <span>{t(scheme.category)}</span>
+                  {scheme.state ? <span>{stateLabel(scheme.state, t)}</span> : null}
+                </p>
+                <h2><Link to={`/schemes/${scheme._id}`}>
+                  {localizedScheme(scheme, 'title', lang)} <span className="direction-arrow" aria-hidden="true">→</span>
+                </Link></h2>
+                <p lang="en" dir="ltr">{localizedScheme(scheme, 'summary', lang)}</p>
+                {scheme.eligibilityMode === 'public' && <p className="muted" lang="en" dir="ltr">{getText('en', 'publicSchemeAccess')}</p>}
+                {!scheme.eligibilityMode && !Object.hasOwn(schemeQuestions, scheme.slug) && (
+                  <p className="muted catalog-coverage">{t('officialCheck')}</p>
+                )}
+              </div>
             </li>
           ))}
         </ul>
