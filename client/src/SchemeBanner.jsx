@@ -56,7 +56,8 @@ const descriptions = new Map([
   ['wb-svmcm', 'A student writing at a library table beside an open book'],
 ]);
 
-export default function SchemeBanner({ slug, category, featured = false, priority = false }) {
+export default function SchemeBanner({ slug, category, featured = false, priority = false, disabled = false }) {
+  if (disabled) return <div className="scheme-banner scheme-banner-fallback" aria-hidden="true" />;
   const name = schemePhotos.get(slug) ?? categoryPhotos.get(category) ?? 'public';
   const original = images[`./assets/schemes/${name}.webp`] ?? images[`./assets/scholarships/${name}.webp`];
   const variants = [256, 640, 960].map((width) => `${images[`./assets/responsive/${name}-${width}.webp`]} ${width}w`);

@@ -5,6 +5,7 @@ const { rules } = require('../profileEligibility');
 const { verificationKind } = require('../schemeVerification');
 const { boundedText, hasOnlyFields } = require('../requestValidation');
 const { categories } = require('../catalogFields');
+const { verificationFor } = require('../verification');
 const { classifySchemeId, findScheme } = require('../schemeLookup');
 const catalog = new Map(require('../catalog').map((scheme) => [scheme.slug, scheme]));
 
@@ -16,11 +17,11 @@ function escapeRegex(text) {
 
 function publishedScheme(scheme) {
   const entry = catalog.get(scheme.slug);
-  if (!entry) return scheme;
+  if (!entry) return { ...scheme, ...verificationFor(scheme.slug) };
   const { title, summary, sourceUrl, eligibilityRequirements, eligibilitySourceUrl } = entry;
   const result = {
     ...scheme, title, summary, sourceUrl, eligibilityRequirements, eligibilitySourceUrl,
-    lastVerifiedAt: scheme.lastVerifiedAt ?? null,
+    ...verificationFor(scheme.slug),
     verificationKind: verificationKind(scheme.slug),
   };
   if (Object.hasOwn(rules, scheme.slug)) {

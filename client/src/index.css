@@ -462,6 +462,11 @@ summary:active { color: var(--violet-active); }
   object-fit: cover;
 }
 
+.scheme-banner-fallback {
+  aspect-ratio: var(--image-ratio);
+  background: var(--violet);
+}
+
 .meta {
   display: flex;
   flex-wrap: wrap;

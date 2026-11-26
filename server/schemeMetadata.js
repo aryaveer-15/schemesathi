@@ -3,6 +3,7 @@ const path = require('node:path');
 const catalog = require('./catalog');
 const Scheme = require('./models/Scheme');
 const { classifySchemeId, findScheme } = require('./schemeLookup');
+const { verificationFor } = require('./verification');
 
 const entries = new Map(catalog.map((scheme) => [scheme.slug, scheme]));
 const generic = { title: 'SchemeSathi', description: 'Discover government schemes in India and check preliminary eligibility.' };
@@ -40,7 +41,8 @@ function createSchemePages(staticDir, siteOrigin) {
     const stored = !fromRepo && kind && Scheme.db.readyState === 1 ? await findScheme(id, kind) : null;
     const scheme = fromRepo ?? entries.get(stored?.slug);
     res.status(scheme || stored ? 200 : 404).set('Cache-Control', 'no-cache')
-      .type('html').send(renderMetadata(shell, scheme, siteOrigin, image));
+      .type('html').send(renderMetadata(shell, scheme, siteOrigin,
+        scheme && verificationFor(scheme.slug).bannerDisabled ? null : image));
   };
 }
 

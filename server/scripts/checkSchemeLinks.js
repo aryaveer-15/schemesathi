@@ -81,6 +81,26 @@ function cell(value) {
     .replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
+function humanCheck(results) {
+  const groups = [
+    ['Observed failures · HTTP 404/410 or DNS name resolution', []],
+    ['May depend on the checker or network · timeout, access restriction or TLS', []],
+    ['Other issues and redirects · confirm the intended destination', []],
+  ];
+  for (const { url, outcome, detail, chain, references } of results) {
+    if (outcome === 'reachable' && chain.length <= 1) continue;
+    const group = outcome === 'not found' || /^(?:ENOTFOUND|EAI_NONAME|EAI_NODATA)$/.test(detail ?? '') ? 0
+      : ['timeout', 'access restricted'].includes(outcome) || /CERT|TLS|SSL|SIGNATURE|EAI_AGAIN/i.test(detail ?? '') ? 1 : 2;
+    const published = references[0]?.originalUrl ?? url;
+    const names = [...new Set(references.map(({ slug }) => slug))].join(', ');
+    const note = detail ?? [outcome === 'reachable' ? 'redirect' : outcome, chain.at(-1)?.status].filter(Boolean).join(' ');
+    groups[group][1].push(`- ${cell(names)} · ${cell(published)} · ${cell(note)}`);
+  }
+  return ['## Needs human check', '',
+    'DNS and HTTP results reflect this run. Recheck them before replacing a link. Retry inconclusive requests in a normal browser or another network.',
+    ...groups.flatMap(([title, entries]) => ['', `### ${title}`, '', ...(entries.length ? entries : ['None observed.'])]), ''];
+}
+
 function formatReport(results, checkedAt) {
   const schemeCount = new Set(results.flatMap(({ references }) => references.map(({ slug }) => slug))).size;
   const issueCount = results.filter(({ outcome, chain }) => outcome !== 'reachable' || chain.length > 1).length;
@@ -97,6 +117,9 @@ function formatReport(results, checkedAt) {
     `Checked at ${checkedAt.toISOString()}. ${schemeCount} schemes, ${results.length} unique URLs, ${issueCount} URLs to review.`,
     '',
     `GET checks allow up to ${redirectLimit} redirects and ${timeoutMs / 1000} seconds per URL. A 2xx response indicates an HTTP response only. Verify the destination and criteria separately. Timeouts, restrictions and transport failures may depend on the network.`,
+    '',
+    ...humanCheck(results),
+    '## Full link inventory',
     '',
     '| Scheme | Field | Published URL | Result and redirect chain |',
     '| --- | --- | --- | --- |',

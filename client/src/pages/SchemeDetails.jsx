@@ -116,7 +116,7 @@ function SchemeDetailsContent({ id }) {
                   : t('verificationPending')}
               </p>
             </div>
-            <SchemeBanner slug={scheme.slug} category={scheme.category} featured />
+            <SchemeBanner slug={scheme.slug} category={scheme.category} featured disabled={scheme.bannerDisabled} />
           </div>
           <div className="scheme-body">
             {(verificationMessage || scheme.eligibilityRequirements?.length > 0) && (

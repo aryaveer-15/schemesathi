@@ -6,6 +6,8 @@ const os = require('node:os');
 const path = require('node:path');
 const createApp = require('../app');
 const Scheme = require('../models/Scheme');
+const verificationRecords = require('../verificationRecords.json');
+const { bySlug } = require('../verification');
 
 const logs = [];
 let base;
@@ -136,12 +138,22 @@ test('publishes current catalog content for existing scheme IDs and searches it'
   assert.deepEqual(schemeDetail, matches[0]);
   assert.equal(original.title.en, 'National Social Assistance Programme');
   const list = await (await fetch(`${base}/api/schemes`)).json();
-  assert.deepEqual(list.find((entry) => entry.slug === custom.slug), custom);
+  assert.deepEqual(list.find((entry) => entry.slug === custom.slug), { ...custom, lastVerifiedAt: null, bannerDisabled: false });
 });
 
 test('scheme details expose a review date, an explicit unreviewed state and verification notes', async (context) => {
   const id = '64f000000000000000000001';
   const verified = new Date('2026-11-25T00:00:00.000Z');
+  const slugWithReview = 'ayushman-bharat-pmjay';
+  const original = verificationRecords[slugWithReview];
+  verificationRecords[slugWithReview] = {
+    bannerDisabled: true,
+    review: { matches: 'yes', date: '2026-11-24', fingerprint: bySlug.get(slugWithReview).fingerprint },
+  };
+  context.after(() => {
+    if (original === undefined) delete verificationRecords[slugWithReview];
+    else verificationRecords[slugWithReview] = original;
+  });
   assert.equal(new Scheme().lastVerifiedAt, null);
   let stored;
   context.mock.method(Scheme, 'findById', () => ({ lean: async () => stored }));
@@ -155,7 +167,8 @@ test('scheme details expose a review date, an explicit unreviewed state and veri
     const response = await fetch(`${base}/api/schemes/${id}`);
     assert.equal(response.status, 200);
     const details = await response.json();
-    assert.equal(details.lastVerifiedAt, date?.toISOString() ?? null, slug);
+    assert.equal(details.lastVerifiedAt, slug === slugWithReview ? '2026-11-24' : null, slug);
+    assert.equal(details.bannerDisabled, slug === slugWithReview, slug);
     assert.equal(details.verificationKind, expectedKind, slug);
   }
 });

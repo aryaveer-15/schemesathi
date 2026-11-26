@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 
 # Local scheme link audit output
 /LINK_REPORT.md
+/VERIFICATION_CHECKLIST.md
+/server/verificationRecords.json.lock
+/server/verificationRecords.json.*.tmp

@@ -1,7 +1,7 @@
 import { effectiveInputs, evaluateLegacy, evaluateProfile } from './eligibilityMatcher.mjs';
-import { schemeTitle } from './eligibilityContent';
-import { getText } from './locales';
-import { localizedScheme } from './schemeText';
+import { schemeTitle } from './eligibilityContent.js';
+import { getText } from './locales/index.js';
+import { localizedScheme } from './schemeText.js';
 
 const profileLabels = {
   age: 'profileAge',

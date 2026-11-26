@@ -12,6 +12,8 @@ COPY server/package*.json ./
 RUN npm ci --omit=dev
 COPY server/ ./
 COPY client/src/eligibilityMatcher.mjs /app/client/src/eligibilityMatcher.mjs
+COPY client/src/eligibilityContent.js client/src/schemeText.js client/src/questionnaire.js client/src/schemeQuestionSources.js /app/client/src/
+COPY client/src/locales/ /app/client/src/locales/
 COPY --from=client-build /app/client/dist /app/client/dist
 USER node
 EXPOSE 5000

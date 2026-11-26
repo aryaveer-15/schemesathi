@@ -66,6 +66,42 @@ Login and registration share 20 requests per client per 15 minutes. Auth reads a
 
 Edit `server/catalog.js` or `server/additionalCatalog.js` to update the 51 maintained entries. Existing scheme IDs and MongoDB records are preserved. The API publishes maintained titles, summaries, eligibility requirements where available, and source URLs for those slugs. Keep the questions in `client/src/eligibilityContent.js` and the checks in `server/routes/eligibility.js` and `server/profileEligibility.js` aligned with official criteria.
 
+### Verify a maintained scheme
+
+Run from the repository root in PowerShell.
+
+```powershell
+npm.cmd --prefix server run verify:checklist -- --online
+npm.cmd --prefix server run check:links
+```
+
+Open `VERIFICATION_CHECKLIST.md` and work from the highest priority down. Omit `--online` to generate the checklist without network requests. The online mode tries the published primary page and linked criteria. Excerpts may cover a different route or programme. Compare the full official document yourself. For PDFs, put Poppler's `pdftotext` on your PATH or pass the executable as `--pdf 'C:\Path\To\pdftotext.exe'`. Use `--output` to write to a separate file. The script replaces the generated checklist on each run. Keep your own copies if you annotate the file directly.
+
+After reviewing the full scheme, enter the scheme ID, your actual review date, initials and decision when prompted by these PowerShell lines. The first command only previews the diff. Use `--snapshot` with the ID in the checklist if you want the command to reject a review of outdated data.
+
+```powershell
+$schemeId = Read-Host 'Scheme ID'
+$reviewDate = Read-Host 'Date reviewed (YYYY-MM-DD)'
+$reviewer = Read-Host 'Your initials'
+$decision = Read-Host 'Matches official source (yes, no, or unclear)'
+$snapshot = Read-Host 'Snapshot ID from the checklist'
+npm.cmd --prefix server run verify:record -- --scheme $schemeId --date $reviewDate --by $reviewer --matches $decision --snapshot $snapshot
+```
+
+If the preview is correct, repeat with `--apply`, then run `git diff -- server/verificationRecords.json` before committing. The command never commits. A `yes` applies to the current scheme snapshot and sets the public **Last verified** date after restart or redeploy. A `no`, an `unclear`, or a changed snapshot leaves the date pending. Old database dates without a ledger review are pending. The ledger records the latest decision per scheme and committed history preserves earlier entries.
+
+For `no` or `unclear`, add `--field` and `--value` with the correction you obtained from the official source. The command records it as a proposal and leaves the live matcher and published facts as they are. Optional `--notes` can include the official document section. Use initials only and keep personal or confidential information out of the ledger.
+
+The banner switch uses the same preview and apply workflow. It keeps the banner's dimensions and omits its photograph from the catalogue, detail view and link preview for that scheme.
+
+```powershell
+npm.cmd --prefix server run verify:record -- --scheme $schemeId --banner off
+npm.cmd --prefix server run verify:record -- --scheme $schemeId --banner off --apply
+git diff -- server/verificationRecords.json
+```
+
+Use `--banner on` to enable it again. The original photo files stay in the repository and can still be used by other schemes.
+
 When updating user-facing text or maintained scheme content, update the corresponding translations in `client/src/locales/`. The original English, Hindi, and Kannada copies are in `client/src/i18n.jsx`, `client/src/eligibilityContent.js`, and `server/catalog.js`.
 
 Eligibility results explain whether the answers match the criteria checked by SchemeSathi. Users should confirm current rules with the official programme before applying. The housing check covers PMAY Urban 2.0. PM-JAY coverage for people below 70 requires checking the official beneficiary portal. The pension check covers old-age and widow pensions. The questionnaire directs disability pension applicants to verify applicable rules with their state office.
