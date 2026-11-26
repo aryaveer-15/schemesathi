@@ -3,6 +3,7 @@ import { eligibilityText, schemeScope } from './eligibilityContent';
 import { entryTitle, matcherInputs, questionLabel, remainingQuestions, replayAnswers } from './questionnaire';
 import { schemeQuestionSources } from './schemeQuestionSources';
 import EligibilityResults from './EligibilityResults';
+import TranslationNotice from './TranslationNotice';
 import { useLang } from './useLang';
 
 const options = ['yes', 'no', 'unknown'];
@@ -81,8 +82,8 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
   }
   if (!current) return null;
 
-  const question = questionLabel(current.entry, current.key, lang, t);
-  const scope = schemeScope(lang, current.entry.slug);
+  const question = questionLabel(current.entry, current.key);
+  const scope = schemeScope(current.entry.slug);
   const total = index + pending.length;
   const last = pending.length === 1;
   const progress = t('questionProgress').replace('{current}', number(index + 1)).replace('{total}', number(total));
@@ -95,8 +96,9 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
       <p id="question-progress">{progress}</p>
       <progress aria-labelledby="question-progress" max={total} value={index + 1} />
       <p>{isShared ? t('profileDetails') : entryTitle(current.entry, lang)}</p>
-      <h2 ref={heading} tabIndex={-1} id="question-heading">{question}</h2>
-      {scope && <p className="status">{scope}</p>}
+      <TranslationNotice />
+      <h2 ref={heading} tabIndex={-1} id="question-heading" lang="en" dir="ltr">{question}</h2>
+      {scope && <p className="status" lang="en" dir="ltr">{scope}</p>}
       {!isShared && sourceUrl && (
         <p><a href={sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a></p>
       )}
@@ -126,7 +128,7 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
           </select>
         )}
         {invalid && <p className="alert" role="alert" id="question-error">
-          {isNumber ? t('ageRequired') : local('answerRequired')}
+          {isNumber ? <span lang="en" dir="ltr">{eligibilityText('en', 'ageRequired')}</span> : local('answerRequired')}
         </p>}
         {failed && <p className="alert" role="alert">{single ? local('failed') : t('matchFailed')}</p>}
         <div className="wizard-actions">

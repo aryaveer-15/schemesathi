@@ -3,7 +3,9 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { schemeQuestions, schemeTitle } from '../eligibilityContent';
 import { helpReply } from '../helpTopics';
+import { getText } from '../locales';
 import { localizedScheme } from '../schemeText';
+import TranslationNotice from '../TranslationNotice';
 import { useAuth } from '../useAuth';
 import { useLang } from '../useLang';
 
@@ -111,7 +113,12 @@ function TopicReply({ reply }) {
   const { t } = useLang();
   return (
     <>
-      <p>{t(reply.text)}</p>
+      {reply.text === 'helpApplyAnswer' ? (
+        <>
+          <TranslationNotice />
+          <p lang="en" dir="ltr">{getText('en', reply.text)}</p>
+        </>
+      ) : <p>{t(reply.text)}</p>}
       {reply.links.length > 0 && <ul>{reply.links.map(([path, key]) => (
         <li key={path}><Link to={path}>{t(key)}</Link></li>
       ))}</ul>}
@@ -124,7 +131,12 @@ function SchemeReply({ scheme, slug }) {
   return (
     <section>
       <h2>{schemeTitle(lang, slug)}</h2>
-      {scheme && <p>{localizedScheme(scheme, 'summary', lang)}</p>}
+      {scheme && (
+        <>
+          <TranslationNotice />
+          <p lang="en" dir="ltr">{localizedScheme(scheme, 'summary', lang)}</p>
+        </>
+      )}
       <ul>
         <li><Link to={`/eligibility?scheme=${encodeURIComponent(slug)}`}>{t('eligibility')}</Link></li>
         {scheme && /^https:\/\//i.test(scheme.sourceUrl) && (

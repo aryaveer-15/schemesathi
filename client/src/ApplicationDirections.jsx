@@ -9,11 +9,11 @@ export default function ApplicationDirections({ application }) {
       <strong>{t('howToGetBenefit')}</strong>
       {application.online && (
         <p>
-          {application.online}{' '}
+          <span lang="en" dir="ltr">{application.online}</span>{' '}
           <a href={application.url} target="_blank" rel="noreferrer">{t('openOfficialPortal')}</a>
         </p>
       )}
-      {application.visit && <p>{application.visit}</p>}
+      {application.visit && <p lang="en" dir="ltr">{application.visit}</p>}
     </div>
   );
 }

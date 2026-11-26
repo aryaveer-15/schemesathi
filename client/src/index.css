@@ -54,9 +54,50 @@ body,
   min-height: 100%;
 }
 
+/* Prefer device fonts with native script shaping. No font requests leave the site. */
+:lang(hi), :lang(mr) {
+  --reader-font: 'Noto Sans Devanagari', Mangal, 'Nirmala UI', var(--sans);
+}
+
+:lang(bn) {
+  --reader-font: 'Noto Sans Bengali', Vrinda, 'Nirmala UI', var(--sans);
+}
+
+:lang(te) {
+  --reader-font: 'Noto Sans Telugu', Gautami, 'Nirmala UI', var(--sans);
+}
+
+:lang(ta) {
+  --reader-font: 'Noto Sans Tamil', Latha, 'Nirmala UI', var(--sans);
+}
+
+:lang(gu) {
+  --reader-font: 'Noto Sans Gujarati', Shruti, 'Nirmala UI', var(--sans);
+}
+
+:lang(ur) {
+  --reader-font: 'Noto Nastaliq Urdu', 'Noto Sans Arabic', 'Urdu Typesetting', 'Segoe UI', var(--sans);
+}
+
+:lang(kn) {
+  --reader-font: 'Noto Sans Kannada', Tunga, 'Nirmala UI', var(--sans);
+}
+
+:lang(or) {
+  --reader-font: 'Noto Sans Oriya', Kalinga, 'Nirmala UI', var(--sans);
+}
+
+:lang(ml) {
+  --reader-font: 'Noto Sans Malayalam', Kartika, 'Nirmala UI', var(--sans);
+}
+
+:lang(en) {
+  --reader-font: var(--sans);
+}
+
 body {
   margin: 0;
-  font-family: var(--sans);
+  font-family: var(--reader-font, var(--sans));
   font-size: 1rem;
   line-height: 1.5;
   color: var(--text);
@@ -75,9 +116,21 @@ a:focus-visible {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
   color: inherit;
+}
+
+[lang] {
+  font-family: var(--reader-font, var(--sans));
+}
+
+.translation-note {
+  display: block;
+  margin-block: 0.5rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .app {
@@ -103,6 +156,8 @@ select {
   font-weight: 750;
   font-size: 1.25rem;
   color: var(--text);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
 }
 
 .brand-mark {
@@ -118,6 +173,7 @@ select {
   align-items: center;
   justify-content: flex-end;
   gap: 0.25rem;
+  min-inline-size: 0;
 }
 
 .nav a {
@@ -165,6 +221,33 @@ select {
   border-radius: 8px;
   background: var(--surface);
   padding: 0.4rem 0.7rem;
+}
+
+.lang {
+  min-inline-size: 0;
+}
+
+.lang select {
+  max-inline-size: 100%;
+  min-block-size: 44px;
+}
+
+.catalog-toolbar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.catalog-toolbar > input,
+.catalog-toolbar > select {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.wizard-actions button,
+.match-result-card,
+.scheme-detail,
+.scheme-card {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
 }
 
 .page {
@@ -791,10 +874,6 @@ select {
 
   .catalog-toolbar {
     grid-template-columns: minmax(0, 1fr) minmax(0, 14rem) minmax(0, 17rem);
-  }
-
-  .catalog-toolbar > select {
-    min-inline-size: 0;
   }
 
   .grid {

@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useLang } from '../useLang';
-import { localizedScheme } from '../schemeText';
+import { localizedScheme, stateLabel } from '../schemeText';
 import { schemeQuestions } from '../eligibilityContent';
 import SchemeBanner from '../SchemeBanner';
+import TranslationNotice from '../TranslationNotice';
+import { getText } from '../locales';
 
 const pageSize = 24;
 
@@ -62,9 +64,9 @@ export default function Schemes() {
       if (!q) return true;
       const title = localizedScheme(scheme, 'title', lang);
       const summary = localizedScheme(scheme, 'summary', lang);
-      const state = scheme.state === 'All India' ? t('allIndia') : scheme.state || '';
+      const state = scheme.state || '';
       const cat = scheme.category || '';
-      return [title, summary, state, cat, t(cat), localizedScheme(scheme, 'title', 'en')]
+      return [title, summary, state, stateLabel(state, t), cat, cat ? t(cat) : '', localizedScheme(scheme, 'title', 'en')]
         .some((text) => text.normalize('NFC').toLowerCase().includes(q));
     });
   }, [schemes, query, category, region, lang, t]);
@@ -104,8 +106,8 @@ export default function Schemes() {
           setRegion(e.target.value);
           setVisibleCount(pageSize);
         }}>
-          <option value="">{t('states')}</option>
-          {regions.map((state) => <option key={state} value={state}>{state}</option>)}
+          <option value="">{t('allRegions')}</option>
+          {regions.map((state) => <option key={state} value={state}>{stateLabel(state, t)}</option>)}
         </select>
       </div>
 
@@ -118,6 +120,7 @@ export default function Schemes() {
         <p className="status">{t('noSchemes')}</p>
       ) : null}
 
+      <TranslationNotice />
       {!loading && filtered.length > 0 ? (
         <ul className="grid">
           {filtered.slice(0, visibleCount).map((scheme) => (
@@ -125,13 +128,13 @@ export default function Schemes() {
               <SchemeBanner slug={scheme.slug} category={scheme.category} />
               <p className="meta">
                 <span>{t(scheme.category)}</span>
-                {scheme.state ? <span>{scheme.state === 'All India' ? t('allIndia') : scheme.state}</span> : null}
+                {scheme.state ? <span>{stateLabel(scheme.state, t)}</span> : null}
               </p>
               <h2><Link to={`/schemes/${scheme._id}`}>
                 {localizedScheme(scheme, 'title', lang)} <span className="direction-arrow" aria-hidden="true">→</span>
               </Link></h2>
-              <p>{localizedScheme(scheme, 'summary', lang)}</p>
-              {scheme.eligibilityMode === 'public' && <p className="muted">{t('publicSchemeAccess')}</p>}
+              <p lang="en" dir="ltr">{localizedScheme(scheme, 'summary', lang)}</p>
+              {scheme.eligibilityMode === 'public' && <p className="muted" lang="en" dir="ltr">{getText('en', 'publicSchemeAccess')}</p>}
               {!scheme.eligibilityMode && !Object.hasOwn(schemeQuestions, scheme.slug) && (
                 <p className="muted catalog-coverage">{t('officialCheck')}</p>
               )}
@@ -145,7 +148,7 @@ export default function Schemes() {
           onClick={() => setVisibleCount((value) => value + pageSize)}>{t('moreSchemes')}</button></p>
       )}
 
-      <p className="disclaimer">{t('disclaimer')}</p>
+      <p className="disclaimer" lang="en" dir="ltr">{getText('en', 'disclaimer')}</p>
     </main>
   );
 }

@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { createRequire } from 'node:module';
 import { schemeQuestions } from '../src/eligibilityContent.js';
-import { additionalTranslations } from '../src/locales/index.js';
-import { translatedScheme } from '../src/schemeText.js';
+import { additionalTranslations, dictionaries } from '../src/locales/index.js';
+import { localizedScheme, translatedScheme } from '../src/schemeText.js';
 
 const catalog = createRequire(import.meta.url)('../../server/catalog.js');
 const { questionnaire, documentChecklists } = createRequire(import.meta.url)('../../server/questionnaire.js');
@@ -126,10 +126,11 @@ test('all added languages translate the site, catalog, and eligibility forms', a
     await expect(page.locator('html')).toHaveAttribute('lang', code);
     await expect(page.locator('html')).toHaveAttribute('dir', code === 'ur' ? 'rtl' : 'ltr');
     for (const [slug, { questions }] of Object.entries(schemeQuestions)) {
-      expect(translatedScheme(slug, 'title', code)).toBeTruthy();
-      expect(translatedScheme(slug, 'summary', code)).toBeTruthy();
+      expect(translatedScheme(slug, code)).toBeTruthy();
+      const entry = catalog.find((item) => item.slug === slug);
+      expect(localizedScheme(entry, 'summary', code)).toBe(entry.summary.en);
       for (const key of Object.keys(questions)) {
-        expect(copy[key], `${code} translation for ${slug} question ${key}`).toBeTruthy();
+        expect(copy[key], `${code} uses source English while ${slug} question ${key} awaits review`).toBe(dictionaries.en[key]);
       }
     }
   }
@@ -140,8 +141,9 @@ test('all added languages translate the site, catalog, and eligibility forms', a
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await page.getByRole('navigation').getByRole('link', { name: additionalTranslations.ur.eligibility }).click();
-  await expect(page.getByLabel(additionalTranslations.ur.pensionAge)).toBeVisible();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByLabel(dictionaries.en.pensionAge)).toBeVisible();
+  await expect(page.getByText(additionalTranslations.ur.translationUnderReview)).toBeVisible();
+  await page.getByRole('button', { name: additionalTranslations.ur.nextQuestion }).click();
   await expect(page.getByRole('alert')).toHaveText(additionalTranslations.ur.answerRequired);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
 });

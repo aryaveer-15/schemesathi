@@ -1,3 +1,6 @@
+import en from './en.js';
+import hi from './hi.js';
+import kn from './kn.js';
 import bn from './bn.js';
 import mr from './mr.js';
 import te from './te.js';
@@ -8,6 +11,7 @@ import or from './or.js';
 import ml from './ml.js';
 
 export const additionalTranslations = { bn, mr, te, ta, gu, ur, or, ml };
+export const dictionaries = { en, hi, kn, ...additionalTranslations };
 
 export const languages = [
   { code: 'en', label: 'English' },
@@ -23,6 +27,7 @@ export const languages = [
   { code: 'ml', label: 'മലയാളം' },
 ];
 
-export function additionalText(lang, key) {
-  return additionalTranslations[lang]?.[key];
+export function getText(lang, key) {
+  const dictionary = Object.hasOwn(dictionaries, lang) ? dictionaries[lang] : en;
+  return Object.hasOwn(dictionary, key) ? dictionary[key] : dictionary.labelUnavailable;
 }

@@ -1,4 +1,4 @@
-import { additionalText } from './locales/index.js';
+import { additionalTranslations } from './locales/index.js';
 
 const catalogKeys = new Map([
   ['atal-pension-yojana', 'atal'],
@@ -11,14 +11,28 @@ const catalogKeys = new Map([
   ['pm-mudra-yojana', 'mudra'],
 ]);
 
-export function translatedScheme(slug, field, lang) {
+export function translatedScheme(slug, lang) {
   const key = catalogKeys.get(slug);
-  return key && additionalText(lang, key + (field === 'title' ? 'Title' : 'Summary'));
+  return key && additionalTranslations[lang]?.[key + 'Title'];
 }
 
 export function localizedScheme(scheme, field, lang) {
   const value = scheme[field];
+  const english = (typeof value === 'string' ? value : value?.en) ?? '';
+  if (field === 'summary') return english;
   const translated = typeof value === 'object' ? value?.[lang] : undefined;
-  return translated || translatedScheme(scheme.slug, field, lang)
-    || (typeof value === 'string' ? value : value?.en) || '';
+  return translated || translatedScheme(scheme.slug, lang) || english;
+}
+
+const stateKeys = {
+  'All India': 'allIndia',
+  Karnataka: 'stateKarnataka',
+  Maharashtra: 'stateMaharashtra',
+  Odisha: 'stateOdisha',
+  'Tamil Nadu': 'stateTamilNadu',
+  'West Bengal': 'stateWestBengal',
+};
+
+export function stateLabel(state, t) {
+  return Object.hasOwn(stateKeys, state) ? t(stateKeys[state]) : state;
 }

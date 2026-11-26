@@ -1,5 +1,6 @@
 import { effectiveInputs, evaluateLegacy, evaluateProfile } from './eligibilityMatcher.mjs';
-import { eligibilityText, schemeQuestions, schemeTitle } from './eligibilityContent';
+import { schemeTitle } from './eligibilityContent';
+import { getText } from './locales';
 import { localizedScheme } from './schemeText';
 
 const profileLabels = {
@@ -12,11 +13,8 @@ export function entryTitle(entry, lang) {
   return entry.title ? localizedScheme(entry, 'title', lang) : schemeTitle(lang, entry.slug);
 }
 
-export function questionLabel(entry, key, lang, t, suppliedText) {
-  const legacy = schemeQuestions[entry.slug]?.questions[key];
-  if (legacy) return eligibilityText(lang, key, legacy);
-  if (key === 'citizen') return eligibilityText(lang, key, schemeQuestions['atal-pension-yojana'].questions.citizen);
-  return suppliedText ?? entry.criteria?.[key]?.question ?? t(profileLabels[key] ?? key);
+export function questionLabel(entry, key, suppliedText) {
+  return suppliedText ?? entry.criteria?.[key]?.question ?? getText('en', profileLabels[key] ?? key);
 }
 
 export function matcherInputs(records) {
