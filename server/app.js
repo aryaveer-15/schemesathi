@@ -3,6 +3,9 @@ const path = require('node:path');
 const express = require('express');
 const cors = require('cors');
 const { rateLimit } = require('express-rate-limit');
+const compression = require('compression');
+
+const hashedAsset = /-[\w-]{8}\.[a-z0-9]+$/i;
 
 function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDir, logger = console } = {}) {
   const app = express();
@@ -31,6 +34,12 @@ function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDi
   app.use('/api', cors({
     origin: (origin, callback) => callback(null, Boolean(origin && origins.includes(origin))),
   }));
+  app.use(compression({
+    filter(req, res) {
+      return ['GET', 'HEAD'].includes(req.method) && !req.headers.authorization
+        && !req.path.startsWith('/api/auth/') && compression.filter(req, res);
+    },
+  }));
   app.use('/api', express.json({ limit: '16kb' }));
   app.use('/api/auth', (_req, res, next) => {
     res.set('Cache-Control', 'no-store');
@@ -54,8 +63,20 @@ function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDi
   app.use('/api', (_req, res) => res.status(404).json({ error: 'API route not found' }));
 
   if (staticDir) {
-    app.use(express.static(staticDir, { index: false }));
-    app.get('/{*page}', (_req, res) => res.sendFile(path.join(staticDir, 'index.html')));
+    app.use(express.static(staticDir, {
+      index: false,
+      setHeaders(res, file) {
+        const relative = path.relative(staticDir, file);
+        if (relative === 'index.html') res.set('Cache-Control', 'no-cache');
+        else if (relative.startsWith(`assets${path.sep}`) && hashedAsset.test(path.basename(file))) {
+          res.set('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+      },
+    }));
+    app.use('/assets', (_req, res) => res.set('Cache-Control', 'no-store').sendStatus(404));
+    app.get('/{*page}', (_req, res) => {
+      res.set('Cache-Control', 'no-cache').sendFile(path.join(staticDir, 'index.html'));
+    });
   }
 
   app.use((error, _req, res, next) => {

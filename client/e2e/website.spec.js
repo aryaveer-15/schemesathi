@@ -245,7 +245,7 @@ test('guest help chat shows official scheme links without sending chat messages'
   await expect(page.getByRole('link', { name: 'Visit the official scheme website' })).toHaveAttribute('href', scheme.sourceUrl);
   await page.getByLabel('Your question', { exact: true }).fill('Something unrelated');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.getByText('Choose a topic below or type one of the listed scheme names.')).toBeVisible();
+  await expect(page.locator('.chat-message-answer').getByText('Choose a topic below or type one of the listed scheme names.')).toBeVisible();
   expect(network.filter(([method, path]) => method !== 'GET' || path.startsWith('/api/chat'))).toEqual([]);
 });
 
@@ -298,13 +298,15 @@ test('every scheme has a catalog banner and detail pages reuse the same photo', 
     loading: image.loading, alt: image.alt, width: image.getAttribute('width'), height: image.getAttribute('height'),
     lang: image.lang, source: image.src,
   })));
-  for (const { loading, alt, width, height, lang, source } of attributes) {
-    expect(loading).toBe('lazy');
+  for (const [index, { loading, alt, width, height, lang, source }] of attributes.entries()) {
+    expect(loading).toBe(index === 0 ? 'eager' : 'lazy');
     expect(alt.trim().split(/\s+/).length).toBeGreaterThan(3);
     expect(lang).toBe('en');
     expect([width, height]).toEqual(['1280', '640']);
     expect(new URL(source).pathname).toMatch(/\.webp$/);
   }
+  await expect(photos.first()).toHaveAttribute('fetchpriority', 'high');
+  await expect(photos.first()).toHaveAttribute('srcset', /256w.*640w.*960w.*1280w/);
   const scholarshipSources = scholarshipSlugs.map((slug) => sources[schemes.findIndex((entry) => entry.slug === slug)]);
   expect(new Set(scholarshipSources).size).toBe(scholarshipSlugs.length);
   for (const slug of ['aicte-pragati', 'pm-kisan', 'pm-surya-ghar']) {
@@ -315,7 +317,15 @@ test('every scheme has a catalog banner and detail pages reuse the same photo', 
     await expect(detailPhoto).toHaveAttribute('loading', 'eager');
     await expect(detailPhoto).toHaveAttribute('fetchpriority', 'high');
     await expect(detailPhoto).toHaveAttribute('alt', attributes[index].alt);
-    await expect.poll(() => detailPhoto.evaluate((image) => image.naturalWidth)).toBe(1280);
+    await expect.poll(() => detailPhoto.evaluate((image) => image.complete && image.naturalWidth > 0)).toBe(true);
+    const imageWidth = await detailPhoto.evaluate(async (image) => {
+      const bitmap = await createImageBitmap(await (await fetch(image.currentSrc)).blob());
+      const width = bitmap.width;
+      bitmap.close();
+      return width;
+    });
+    expect([640, 960, 1280]).toContain(imageWidth);
+    await expect(detailPhoto).toHaveAttribute('srcset', /256w.*640w.*960w.*1280w/);
     expect(await detailPhoto.evaluate((image) => image.src)).toBe(sources[index]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
   }

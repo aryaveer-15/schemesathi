@@ -19,6 +19,7 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
   const [result, setResult] = useState(null);
   const heading = useRef(null);
   const input = useRef(null);
+  const submitError = useRef(null);
   const pending = remainingQuestions(entries, records.slice(0, index), single, requestedScheme);
   const current = records[index] ?? pending[0];
   const stepId = current?.id;
@@ -29,6 +30,10 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
   useEffect(() => {
     heading.current?.focus();
   }, [stepId, index, result]);
+
+  useEffect(() => {
+    if (failed) submitError.current?.focus();
+  }, [failed]);
 
   function visit(nextIndex, path) {
     setIndex(nextIndex);
@@ -97,7 +102,7 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
       <progress aria-labelledby="question-progress" max={total} value={index + 1} />
       <p className="wizard-context">{isShared ? t('profileDetails') : entryTitle(current.entry, lang)}</p>
       <TranslationNotice />
-      <h2 ref={heading} tabIndex={-1} id="question-heading" lang="en" dir="ltr">{question}</h2>
+      <h2 ref={heading} tabIndex={-1} id="question-heading" lang="en" dir="ltr" aria-describedby="question-progress">{question}</h2>
       {scope && <p className="status" lang="en" dir="ltr">{scope}</p>}
       {!isShared && sourceUrl && (
         <p><a href={sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a></p>
@@ -130,7 +135,7 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
         {invalid && <p className="alert" role="alert" id="question-error">
           {isNumber ? <span lang="en" dir="ltr">{eligibilityText('en', 'ageRequired')}</span> : local('answerRequired')}
         </p>}
-        {failed && <p className="alert" role="alert">{single ? local('failed') : t('matchFailed')}</p>}
+        {failed && <p className="alert" ref={submitError} tabIndex={-1}>{single ? local('failed') : t('matchFailed')}</p>}
         <div className="wizard-actions">
           {index > 0 && <button className="secondary-action" type="button" onClick={() => visit(index - 1, records)}>{t('previousQuestion')}</button>}
           <button type="submit">{busy ? t('loading') : last ? t(single ? 'eligibility' : 'showMatches') : t('nextQuestion')}</button>

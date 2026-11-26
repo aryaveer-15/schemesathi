@@ -137,9 +137,9 @@ export default function Schemes() {
       <TranslationNotice />
       {!loading && filtered.length > 0 ? (
         <ul className="scheme-list">
-          {filtered.slice(0, visibleCount).map((scheme) => (
+          {filtered.slice(0, visibleCount).map((scheme, index) => (
             <li key={scheme._id} className="scheme-card" data-category={scheme.category}>
-              <SchemeBanner slug={scheme.slug} category={scheme.category} />
+              <SchemeBanner slug={scheme.slug} category={scheme.category} priority={index === 0} />
               <div className="scheme-card-copy">
                 <p className="meta">
                   <span>{t(scheme.category)}</span>

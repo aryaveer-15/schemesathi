@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { schemeQuestions, schemeTitle } from '../eligibilityContent';
@@ -37,6 +37,12 @@ function ChatPanel({ initialTopic }) {
     return topic ? [{ label: topic.label, reply: { topic: topic.key } }] : [];
   });
   const [question, setQuestion] = useState('');
+  const composer = useRef(null);
+  const [announcedReply, setAnnouncedReply] = useState(null);
+  const announcementKey = announcedReply?.topic && replies[announcedReply.topic].text;
+  const announcement = announcedReply?.schemes
+    ? announcedReply.schemes.map((slug) => schemeTitle(lang, slug)).join(', ')
+    : announcementKey ? getText(announcementKey === 'helpApplyAnswer' ? 'en' : lang, announcementKey) : '';
 
   useEffect(() => {
     let active = true;
@@ -50,20 +56,27 @@ function ChatPanel({ initialTopic }) {
 
   function addReply(message, reply) {
     setMessages((current) => [...current.slice(-7), { message, reply }]);
+    setAnnouncedReply(reply);
     setQuestion('');
   }
 
   function sendQuestion(event) {
     event.preventDefault();
     const message = question.trim();
-    if (message) addReply(message, helpReply(message, t));
+    if (message) {
+      addReply(message, helpReply(message, t));
+      composer.current?.focus();
+    }
   }
 
   return (
     <main className="page">
       <h1>{t('schemeChat')}</h1>
       <p>{t('chatIntro')}</p>
-      <div className="eligibility-form" aria-live="polite">
+      <div className="sr-only" role="status" lang={announcementKey === 'helpApplyAnswer' ? 'en' : lang}>
+        {announcement}
+      </div>
+      <div className="eligibility-form">
         {messages.map(({ message, label, reply }, index) => (
           <div className="chat-turn" key={index}>
             <article className="card chat-message chat-message-question" dir="auto">
@@ -99,7 +112,7 @@ function ChatPanel({ initialTopic }) {
       <form className="form eligibility-form chat-form" onSubmit={sendQuestion}>
         <label>
           {t('chatQuestion')}
-          <textarea dir="auto" rows={3} maxLength={240} value={question}
+          <textarea ref={composer} dir="auto" rows={3} maxLength={240} value={question}
             onChange={(event) => setQuestion(event.target.value)} />
         </label>
         <button type="submit" disabled={!question.trim()}>{t('chatSend')}</button>

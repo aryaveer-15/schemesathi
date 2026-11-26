@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const { once } = require('node:events');
 const { test, before, after } = require('node:test');
-const { mkdtemp, rm, writeFile } = require('node:fs/promises');
+const { mkdir, mkdtemp, rm, writeFile } = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const createApp = require('../app');
@@ -16,6 +16,9 @@ let ready = true;
 before(async () => {
   staticDir = await mkdtemp(path.join(os.tmpdir(), 'schemesathi-release-'));
   await writeFile(path.join(staticDir, 'index.html'), '<title>SchemeSathi test build</title>');
+  await mkdir(path.join(staticDir, 'assets'));
+  await writeFile(path.join(staticDir, 'assets', 'Page-aBcd1234.js'), 'console.log("fixture");'.repeat(256));
+  await writeFile(path.join(staticDir, 'assets', 'plain.js'), 'console.log("unhashed fixture");');
   const app = createApp({
     staticDir,
     origins: ['https://schemes.example.org'],
@@ -39,6 +42,30 @@ test('serves SPA routes and keeps API 404s in JSON', async () => {
   const missing = await fetch(`${base}/api/unknown`);
   assert.equal(missing.status, 404);
   assert.match(missing.headers.get('content-type'), /application\/json/);
+});
+
+test('revalidates the app shell, serves compressed immutable hashes and rejects old chunks', async () => {
+  for (const route of ['/', '/schemes/example', '/index.html']) {
+    const response = await fetch(`${base}${route}`);
+    assert.equal(response.headers.get('cache-control'), 'no-cache', route);
+    assert.equal(response.status, 200, route);
+    const validate = await fetch(`${base}${route}`, {
+      headers: { 'if-none-match': response.headers.get('etag'), 'cache-control': 'max-age=0' },
+    });
+    assert.equal(validate.status, 304, route);
+    assert.equal(validate.headers.get('cache-control'), 'no-cache', route);
+  }
+  const asset = await fetch(`${base}/assets/Page-aBcd1234.js`, { headers: { 'Accept-Encoding': 'br, gzip' } });
+  assert.equal(asset.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+  assert.equal(asset.headers.get('content-encoding'), 'br');
+  assert.match(asset.headers.get('vary'), /Accept-Encoding/i);
+  assert.match(await asset.text(), /console.log/);
+  const plain = await fetch(`${base}/assets/plain.js`);
+  assert.doesNotMatch(plain.headers.get('cache-control'), /immutable/);
+  const missing = await fetch(`${base}/assets/Old-bbcd1234.js`);
+  assert.equal(missing.status, 404);
+  assert.equal(missing.headers.get('cache-control'), 'no-store');
+  assert.doesNotMatch(await missing.text(), /SchemeSathi test build/);
 });
 
 test('allows only configured cross-origin callers and reports readiness', async () => {
