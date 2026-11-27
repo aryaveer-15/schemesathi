@@ -4,6 +4,8 @@ import { useAuth } from './useAuth';
 import { useLang } from './useLang';
 import { languages } from './locales';
 import Home from './pages/Home';
+import FindSchemesLink from './FindSchemesLink';
+import LoadingState from './LoadingState';
 
 const Schemes = lazy(() => import('./pages/Schemes.jsx'));
 const SchemeDetails = lazy(() => import('./pages/SchemeDetails.jsx'));
@@ -82,21 +84,19 @@ export default function App() {
         <nav className="nav">
           <NavLink to="/schemes">{t('schemes')}</NavLink>
           <NavLink to="/eligibility">{t('eligibility')}</NavLink>
-          <NavLink to="/my-schemes">{t('findSchemes')}</NavLink>
+          <FindSchemesLink navigation>{t('findSchemes')}</FindSchemesLink>
           <NavLink to="/scheme-chat">{t('schemeChat')}</NavLink>
-          {user ? (
-            <>
-              <span className="greeting">{t('hello')}, <bdi>{user.name}</bdi></span>
-              <button type="button" className="linkish" onClick={signOut}>
-                {t('logout')}
-              </button>
-            </>
-          ) : (
-            <>
-              <NavLink to="/login">{t('login')}</NavLink>
-              <NavLink to="/register">{t('register')}</NavLink>
-            </>
-          )}
+          <span className="account-identity">
+            <span className="account-measure" aria-hidden="true">{t('login')}</span>
+            {user ? <span className="greeting" title={user.name}>{t('hello')}, <bdi>{user.name}</bdi></span>
+              : <NavLink to="/login">{t('login')}</NavLink>}
+          </span>
+          <span className="account-action">
+            <span className="account-measure" aria-hidden="true">{t('register')}</span>
+            <span className="account-measure" aria-hidden="true">{t('logout')}</span>
+            {user ? <button type="button" className="linkish" onClick={signOut}>{t('logout')}</button>
+              : <NavLink to="/register">{t('register')}</NavLink>}
+          </span>
         </nav>
         <label className="lang">
           <span className="sr-only">{t('language')}</span>
@@ -120,9 +120,17 @@ export default function App() {
                 <Route path="/schemes" element={<Schemes />} />
                 <Route path="/schemes/:id" element={<SchemeDetails />} />
                 <Route path="/eligibility" element={<Eligibility />} />
-                <Route path="/my-schemes" element={user ? <FindSchemes />
-                  : status === 'loading' ? <main className="page"><p role="status">{t('loading')}</p></main>
-                  : status === 'unavailable' ? <main className="page"><h1>{t('loadFailed')}</h1><button onClick={refresh}>{t('retry')}</button></main> : <Navigate to={{ pathname: '/login', search }} replace />} />
+                <Route path="/my-schemes" element={
+                  user || status === 'loading' ? <main className="page questionnaire-page">
+                    <h1>{t('findSchemes')}</h1>
+                    <p>{t('guidedMatchIntro')}</p>
+                    <Suspense fallback={<LoadingState variant="questionnaire" />}>
+                      <FindSchemes authenticated={Boolean(user)} />
+                    </Suspense>
+                  </main> : status === 'unavailable' ? <main className="page">
+                    <h1>{t('loadFailed')}</h1><button onClick={refresh}>{t('retry')}</button>
+                  </main> : <Navigate to={{ pathname: '/login', search }} replace />
+                } />
                 <Route path="/scheme-chat" element={<SchemeChat />} />
                 <Route path="*" element={<main className="page">
                 <h1>{t('pageMissing')}</h1>

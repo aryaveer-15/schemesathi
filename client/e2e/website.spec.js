@@ -378,3 +378,55 @@ test('cookie sign-in survives reload, failed logout offers retry, successful log
   expect((await context.cookies()).some((cookie) => cookie.value === token)).toBe(false);
   expect(urls.join(' ')).not.toContain(token);
 });
+
+for (const [path, selector] of [['/', '.home-intro'], ['/schemes', '.scheme-list'],
+  ['/schemes/' + scheme.slug, '.scheme-detail'], ['/my-schemes', '.questionnaire-page']]) {
+  test('slow session restoration keeps content in place on ' + path, async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    let releaseSession;
+    const waiting = new Promise((resolve) => { releaseSession = resolve; });
+    await page.route('**/api/auth/session', async (route) => {
+      await waiting;
+      await route.fulfill({ json: { user: { name: 'Demo Resident' } } });
+    });
+    let questionnaires = 0;
+    await page.route('**/api/eligibility/questionnaire', (route) => {
+      questionnaires++;
+      return route.fulfill({ json: questionnaire });
+    });
+    await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme] }));
+    await page.route('**/api/schemes/' + scheme.slug, (route) => route.fulfill({ json: scheme }));
+    await page.goto(path);
+    const content = page.locator(selector);
+    try {
+      await expect(content).toBeVisible();
+      if (path === '/my-schemes') {
+        await expect(content.getByRole('status')).toBeVisible();
+        expect(questionnaires).toBe(0);
+      }
+      const top = (await content.boundingBox()).y;
+      releaseSession();
+      await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
+      if (path === '/my-schemes') await expect(page.locator('#question-heading')).toBeVisible();
+      expect((await content.boundingBox()).y).toBe(top);
+    } finally {
+      releaseSession();
+    }
+  });
+}
+
+test('touching Find my schemes warms route code without sending answers or opening the form', async ({ page }) => {
+  const requests = [];
+  page.on('request', (request) => requests.push({ path: new URL(request.url()).pathname, method: request.method() }));
+  await page.route('**/api/auth/session', (route) => route.fulfill({ json: { user: null } }));
+  await page.goto('/');
+  const link = page.locator('.home-actions a[href="/my-schemes"]');
+  await link.focus();
+  await link.dispatchEvent('pointerenter', { pointerType: 'mouse' });
+  expect(requests.some(({ path }) => path.endsWith('/pages/FindSchemes.jsx'))).toBe(false);
+  const chunk = page.waitForRequest((request) => new URL(request.url()).pathname.endsWith('/pages/FindSchemes.jsx'));
+  await link.dispatchEvent('pointerdown', { pointerType: 'touch' });
+  await chunk;
+  await expect(page).toHaveURL(/\/$/);
+  expect(requests.every(({ path, method }) => method === 'GET' && !path.startsWith('/api/eligibility'))).toBe(true);
+});

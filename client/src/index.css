@@ -73,6 +73,8 @@
   --identity-rule: 4px;
   --focus-size: 3px;
   --focus-gap: 3px;
+  --identity-width: 14ch;
+  --wizard-placeholder-height: 21.25rem;
   --control-height: 2.75rem;
   --brand-size: 2.5rem;
   --shell-width: 76rem;
@@ -320,6 +322,30 @@ summary:active { color: var(--violet-active); }
 .nav a:hover, .nav a.active { color: var(--violet); background: var(--violet-tint); }
 .nav a:active { color: var(--violet); background: var(--violet-pressed); }
 .nav a.active { text-decoration: underline; }
+.account-identity, .account-action {
+  position: relative;
+  display: inline-grid;
+  align-items: center;
+  min-block-size: var(--control-height);
+}
+.account-identity { min-inline-size: var(--identity-width); }
+.account-identity > *, .account-action > * { grid-area: 1 / 1; justify-self: start; }
+.account-measure {
+  visibility: hidden;
+  padding-inline: var(--space-4);
+  font-size: var(--type-body);
+  font-weight: var(--weight-strong);
+}
+.account-identity .greeting {
+  position: absolute;
+  max-inline-size: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.questionnaire-page .loading-state[data-variant='questionnaire'] {
+  min-block-size: var(--wizard-placeholder-height);
+}
 .greeting { color: var(--muted); padding-inline: var(--space-2); }
 .lang { min-inline-size: 0; }
 

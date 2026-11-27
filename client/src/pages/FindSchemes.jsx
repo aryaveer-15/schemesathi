@@ -6,7 +6,7 @@ import LoadingState from '../LoadingState';
 import { useAuth } from '../useAuth';
 import { useLang } from '../useLang';
 
-export default function FindSchemes() {
+export default function FindSchemes({ authenticated }) {
   const { expireSession } = useAuth();
   const { t } = useLang();
   const [search] = useSearchParams();
@@ -16,6 +16,7 @@ export default function FindSchemes() {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (!authenticated) return;
     const controller = new AbortController();
     api('/api/eligibility/questionnaire', { signal: controller.signal }).then((data) => {
       if (!Array.isArray(data) || !data.length) throw new Error('Questionnaire unavailable');
@@ -24,7 +25,7 @@ export default function FindSchemes() {
       if (!controller.signal.aborted) setFailed(true);
     });
     return () => controller.abort();
-  }, [attempt]);
+  }, [attempt, authenticated]);
 
   async function check(inputs) {
     try {
@@ -36,17 +37,11 @@ export default function FindSchemes() {
     }
   }
 
-  return (
-    <main className="page questionnaire-page">
-      <h1>{t('findSchemes')}</h1>
-      <p>{t('guidedMatchIntro')}</p>
-      {failed ? (
-        <div className="alert feedback" role="alert"><p>{t('extraChecksFailed')}</p>
-          <button type="button" onClick={() => { setFailed(false); setAttempt(attempt + 1); }}>{t('retry')}</button>
-        </div>
-      ) : !entries ? <LoadingState variant="questionnaire" /> : (
-        <EligibilityQuestionnaire key={requestedScheme} entries={entries} requestedScheme={requestedScheme} onCheck={check} />
-      )}
-    </main>
-  );
+  if (failed) {
+    return <div className="alert feedback" role="alert"><p>{t('extraChecksFailed')}</p>
+      <button type="button" onClick={() => { setFailed(false); setAttempt(attempt + 1); }}>{t('retry')}</button>
+    </div>;
+  }
+  if (!authenticated || !entries) return <LoadingState variant="questionnaire" />;
+  return <EligibilityQuestionnaire key={requestedScheme} entries={entries} requestedScheme={requestedScheme} onCheck={check} />;
 }

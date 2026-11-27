@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import FindSchemesLink from '../FindSchemesLink';
 import { useLang } from '../useLang';
 
 export default function Home() {
@@ -12,9 +13,9 @@ export default function Home() {
             <h1 id="home-heading">{t('homeTitle')}</h1>
             <p>{t('homeIntro')}</p>
             <div className="home-actions">
-              <Link className="primary-action" to="/my-schemes">
+              <FindSchemesLink className="primary-action">
                 {t('findSchemes')} <span className="direction-arrow" aria-hidden="true">→</span>
-              </Link>
+              </FindSchemesLink>
               <Link className="secondary-action" to="/schemes">{t('browse')}</Link>
             </div>
           </div>

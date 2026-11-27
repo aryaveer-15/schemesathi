@@ -30,10 +30,20 @@ export function AuthProvider({ children, migrated }) {
   const invalidate = useCallback(() => { generation.current++; }, []);
 
   useEffect(() => {
-    const initialCheck = window.setTimeout(refresh, 0);
+    // Public content paints first. Only the personalized route needs an immediate session lookup.
+    let frame;
+    let timer;
+    if (window.location.pathname.replace(/\/$/, '') === '/my-schemes') {
+      timer = window.setTimeout(refresh, 0);
+    } else {
+      frame = requestAnimationFrame(() => {
+        frame = requestAnimationFrame(refresh);
+      });
+    }
     window.addEventListener('focus', refresh);
     return () => {
-      window.clearTimeout(initialCheck);
+      window.clearTimeout(timer);
+      cancelAnimationFrame(frame);
       invalidate();
       window.removeEventListener('focus', refresh);
     };
