@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { once } = require('node:events');
 const { test, before, after } = require('node:test');
 const createApp = require('../app');
-const app = createApp();
+const app = createApp({ siteOrigin: 'https://schemes.example.org' });
 
 let server;
 let base;
@@ -18,7 +18,7 @@ after(() => server?.close());
 async function check(slug, answers) {
   const response = await fetch(`${base}/${slug}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Origin: 'https://schemes.example.org', 'X-SchemeSathi-Request': '1' },
     body: JSON.stringify({ answers }),
   });
   return { code: response.status, result: await response.json() };

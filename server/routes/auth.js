@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, sessionName, sessionCookies, audience } = require('../middleware/auth');
 const { boundedText, hasOnlyFields } = require('../requestValidation');
 
 const router = express.Router();
@@ -16,8 +16,14 @@ function readEmail(value) {
   return email.length <= 254 && emailFormat.test(email) ? email : null;
 }
 
+const lifetime = 7 * 24 * 60 * 60;
+
+function cookieOptions(req) {
+  return { httpOnly: true, secure: req.app.locals.production, sameSite: 'lax', path: '/api' };
+}
+
 function signToken(user) {
-  return jwt.sign({ id: String(user._id), role: user.role }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '7d' });
+  return jwt.sign({ id: String(user._id), role: user.role }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: lifetime, audience });
 }
 
 function publicUser(user) {
@@ -57,7 +63,8 @@ router.post('/register', async (req, res, next) => {
       passwordHash,
       preferredLanguage: preferredLanguage ?? 'en',
     });
-    res.status(201).json({ token: signToken(user), user: publicUser(user) });
+    res.status(201).cookie(sessionName, signToken(user), { ...cookieOptions(req), maxAge: lifetime * 1000 })
+      .json({ user: publicUser(user) });
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ error: 'Email already registered' });
     next(err);
@@ -78,13 +85,25 @@ router.post('/login', async (req, res, next) => {
     const user = await User.findOne({ email });
     const ok = await bcrypt.compare(password, user?.passwordHash ?? dummyHash);
     if (!user || !ok) return res.status(401).json({ error: 'Invalid email or password' });
-    res.json({ token: signToken(user), user: publicUser(user) });
+    res.cookie(sessionName, signToken(user), { ...cookieOptions(req), maxAge: lifetime * 1000 })
+      .json({ user: publicUser(user) });
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/me', requireAuth, async (req, res) => {
+router.post('/logout', (req, res) => {
+  res.clearCookie(sessionName, cookieOptions(req)).status(204).end();
+});
+
+// Anonymous visitors can restore the navbar without generating a failed request.
+router.get('/session', (req, res, next) => {
+  if (!sessionCookies(req).length) {
+    return res.json({ user: null });
+  }
+  next();
+});
+router.get(['/session', '/me'], requireAuth, async (req, res) => {
   const user = await User.findById(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json({ user: publicUser(user) });

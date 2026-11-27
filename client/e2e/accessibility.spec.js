@@ -36,11 +36,8 @@ for (const code of ['en', 'hi', 'ur']) {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.addInitScript((language) => {
       localStorage.setItem('schemesathi.language', language);
-      if (location.pathname === '/my-schemes') {
-        localStorage.setItem('schemesathi.auth', JSON.stringify({ token: 'test-token', user: { name: 'Demo' } }));
-      }
     }, code);
-    await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user: { name: 'Demo' } } }));
+    await page.route('**/api/auth/session', (route) => route.fulfill({ json: { user: { name: 'Demo' } } }));
     await page.route('**/api/schemes', (route) => route.fulfill({ json: [scheme] }));
     await page.route('**/api/schemes/solar', (route) => route.fulfill({ json: scheme }));
     await page.route('**/api/eligibility/atal-pension-yojana', (route) => route.fulfill({ json: legacy['atal-pension-yojana'] }));

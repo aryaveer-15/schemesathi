@@ -99,7 +99,7 @@ test('recovers from an unavailable API and handles missing schemes', async ({ pa
 });
 
 test('keeps the selected language and clears expired sign-ins', async ({ page }) => {
-  await page.route('**/api/auth/me', (route) => route.fulfill({ status: 401, json: {} }));
+  await page.route('**/api/auth/session', (route) => route.fulfill({ status: 401, json: {} }));
   await page.addInitScript(() => {
     if (!sessionStorage.getItem('test-session-loaded')) {
       localStorage.setItem('schemesathi.auth', JSON.stringify({ token: 'expired-test-token', user: { name: 'Test User' } }));
@@ -108,6 +108,8 @@ test('keeps the selected language and clears expired sign-ins', async ({ page })
   });
   await page.goto('/');
   await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+  await page.getByText('Sign-in has changed. Please sign in again to continue.').waitFor();
+  expect(await page.evaluate(() => localStorage.getItem('schemesathi.auth'))).toBeNull();
   await page.getByLabel('Language').selectOption('hi');
   await page.reload();
   await expect(page.getByRole('heading', { name: 'सरकारी योजनाएँ खोजें' })).toBeVisible();
@@ -152,8 +154,12 @@ test('all added languages translate the site, catalog, and eligibility forms', a
 
 test('registration opens the match questionnaire', async ({ page }) => {
   const user = { name: 'Demo Resident' };
-  await page.route('**/api/auth/register', (route) => route.fulfill({ status: 201, json: { token: 'demo-token', user } }));
-  await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user } }));
+  let registered = false;
+  await page.route('**/api/auth/register', (route) => {
+    registered = true;
+    return route.fulfill({ status: 201, headers: { 'Set-Cookie': 'schemesathi_session=demo-token; Path=/api; HttpOnly; SameSite=Lax' }, json: { user } });
+  });
+  await page.route('**/api/auth/session', (route) => route.fulfill(registered ? { json: { user } } : { status: 401, json: {} }));
   const fields = {
     'pm-matru-vandana': ['maternityStage'],
     'atal-pension-yojana': ['citizen', 'savings'],
@@ -168,7 +174,9 @@ test('registration opens the match questionnaire', async ({ page }) => {
   });
   await page.route('**/api/eligibility/questionnaire', (route) => route.fulfill({ json: plan }));
   await page.route('**/api/eligibility/matches', async (route) => {
-    expect(route.request().headers().authorization).toBe('Bearer demo-token');
+    expect(await route.request().headerValue('cookie')).toContain('schemesathi_session=demo-token');
+    expect(route.request().headers().authorization).toBeUndefined();
+    expect(await page.evaluate(() => JSON.stringify([localStorage, sessionStorage, location.href, document.cookie]))).not.toContain('demo-token');
     expect(route.request().postDataJSON()).toEqual({
       answers: {},
       profile: {
@@ -330,4 +338,43 @@ test('every scheme has a catalog banner and detail pages reuse the same photo', 
     expect(await detailPhoto.evaluate((image) => image.src)).toBe(sources[index]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
   }
+});
+
+test('cookie sign-in survives reload, failed logout offers retry, successful logout clears the session', async ({ page, context }) => {
+  const user = { name: 'Cookie resident' };
+  const token = 'browser-session-fixture';
+  const urls = [];
+  page.on('request', (request) => urls.push(request.url()));
+  await page.route('**/api/auth/session', async (route) => {
+    const cookie = await route.request().headerValue('cookie');
+    return route.fulfill({ json: { user: cookie?.includes(token) ? user : null } });
+  });
+  await page.route('**/api/auth/login', (route) => {
+    expect(route.request().headers()['x-schemesathi-request']).toBe('1');
+    return route.fulfill({ headers: { 'Set-Cookie': 'schemesathi_session=' + token + '; HttpOnly; Path=/api; SameSite=Lax' }, json: { user } });
+  });
+  let failLogout = true;
+  await page.route('**/api/auth/logout', (route) => {
+    expect(route.request().headers()['x-schemesathi-request']).toBe('1');
+    return failLogout ? route.abort() : route.fulfill({ status: 204, headers: {
+      'Set-Cookie': 'schemesathi_session=; Max-Age=0; Path=/api; HttpOnly; SameSite=Lax',
+    } });
+  });
+  await page.goto('/login');
+  await page.getByLabel('Email', { exact: true }).fill('resident@example.org');
+  await page.getByLabel('Password', { exact: true }).fill('fixture-password');
+  await page.getByRole('main').getByRole('button', { name: 'Log in' }).click();
+  await expect(page.getByText(user.name)).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(user.name)).toBeVisible();
+  expect((await context.cookies()).find((cookie) => cookie.value === token)?.httpOnly).toBe(true);
+  expect(await page.evaluate(() => JSON.stringify([localStorage, sessionStorage, location.href]))).not.toContain(token);
+  const logout = page.getByRole('button', { name: /log out/i });
+  await logout.click();
+  await expect(page.getByText(/sign-out could not be confirmed/i)).toBeVisible();
+  failLogout = false;
+  await logout.click();
+  await expect(page.getByRole('navigation').getByRole('link', { name: 'Log in' })).toBeVisible();
+  expect((await context.cookies()).some((cookie) => cookie.value === token)).toBe(false);
+  expect(urls.join(' ')).not.toContain(token);
 });

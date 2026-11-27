@@ -7,7 +7,7 @@ import { useAuth } from '../useAuth';
 import { useLang } from '../useLang';
 
 export default function FindSchemes() {
-  const { token, signOut } = useAuth();
+  const { expireSession } = useAuth();
   const { t } = useLang();
   const [search] = useSearchParams();
   const requestedScheme = search.get('scheme');
@@ -28,10 +28,10 @@ export default function FindSchemes() {
 
   async function check(inputs) {
     try {
-      const { results } = await api('/api/eligibility/matches', { method: 'POST', token, body: inputs });
+      const { results } = await api('/api/eligibility/matches', { method: 'POST', body: inputs });
       return results;
     } catch (error) {
-      if (error.status === 401) signOut();
+      if (error.status === 401) expireSession();
       throw error;
     }
   }

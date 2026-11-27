@@ -1,77 +1,65 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AuthContext } from './useAuth';
 import { api } from './api';
 
-const STORAGE_KEY = 'schemesathi.auth';
+export function AuthProvider({ children, migrated }) {
+  const [user, setUser] = useState(null);
+  const [status, setStatus] = useState('loading');
+  const [notice, setNotice] = useState(migrated ? 'Sign-in has changed. Please sign in again to continue.' : '');
+  const generation = useRef(0);
 
-function loadStoredAuth() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { token: null, user: null };
-    const parsed = JSON.parse(raw);
-    return {
-      token: parsed.token || null,
-      user: parsed.user || null,
-    };
-  } catch {
-    return { token: null, user: null };
-  }
-}
+  const refresh = useCallback(async () => {
+    const current = ++generation.current;
+    try {
+      const data = await api('/api/auth/session');
+      if (current !== generation.current) return;
+      if (!data || !Object.hasOwn(data, 'user')) throw new Error('Session unavailable');
+      setUser(data.user);
+      setStatus('ready');
+    } catch (error) {
+      if (current !== generation.current) return;
+      if ([401, 404].includes(error.status)) {
+        setUser(null);
+        setStatus('ready');
+      } else {
+        setStatus('unavailable');
+      }
+    }
+  }, []);
 
-export function AuthProvider({ children }) {
-  const [{ token, user }, setAuth] = useState(loadStoredAuth);
+  const invalidate = useCallback(() => { generation.current++; }, []);
 
   useEffect(() => {
-    if (!token) return;
-    let active = true;
-    let pending = false;
-    async function validateSession() {
-      if (pending) return;
-      pending = true;
-      try {
-        await api('/api/auth/me', { token });
-      } catch (error) {
-        if (!active || ![401, 404].includes(error.status)) return;
-        clearStoredAuth(token);
-        setAuth((current) => current.token === token ? { token: null, user: null } : current);
-      } finally {
-        pending = false;
-      }
-    }
-    validateSession();
-    window.addEventListener('focus', validateSession);
+    const initialCheck = window.setTimeout(refresh, 0);
+    window.addEventListener('focus', refresh);
     return () => {
-      active = false;
-      window.removeEventListener('focus', validateSession);
+      window.clearTimeout(initialCheck);
+      invalidate();
+      window.removeEventListener('focus', refresh);
     };
-  }, [token]);
+  }, [refresh, invalidate]);
 
-  const value = useMemo(() => {
-    function signIn({ token: nextToken, user: nextUser }) {
-      const next = { token: nextToken, user: nextUser };
-      setAuth(next);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignore storage quota / private-mode failures.
-      }
-    }
-
-    function signOut() {
-      setAuth({ token: null, user: null });
-      clearStoredAuth();
-    }
-
-    return { token, user, signIn, signOut };
-  }, [token, user]);
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-function clearStoredAuth(token) {
-  try {
-    if (!token || loadStoredAuth().token === token) localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // Storage is optional.
+  function signIn({ user: nextUser }) {
+    generation.current++;
+    setUser(nextUser);
+    setStatus('ready');
+    setNotice('');
   }
+
+  function expireSession() {
+    signIn({ user: null });
+  }
+
+  async function signOut() {
+    try {
+      await api('/api/auth/logout', { method: 'POST' });
+      expireSession();
+    } catch {
+      setNotice('Sign-out could not be confirmed. Please try signing out again.');
+    }
+  }
+
+  return <AuthContext.Provider value={{ user, status, notice, refresh, signIn, signOut, expireSession }}>
+    {children}
+  </AuthContext.Provider>;
 }

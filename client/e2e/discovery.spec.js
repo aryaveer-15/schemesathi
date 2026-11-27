@@ -82,7 +82,7 @@ test('chat links a named factual question to its official source and keeps input
   const apiRequests = seen.filter(({ url }) => new URL(url).pathname.startsWith('/api/'));
   expect(initialRequests).toBeGreaterThan(0);
   expect(apiRequests).toHaveLength(initialRequests);
-  expect(apiRequests.every(({ url }) => new URL(url).pathname === '/api/schemes')).toBe(true);
+  expect(apiRequests.every(({ url }) => ['/api/schemes', '/api/auth/session'].includes(new URL(url).pathname))).toBe(true);
   expect(await page.evaluate(() => JSON.stringify([localStorage, sessionStorage, document.cookie]))).not.toContain('87654321');
   await page.reload();
   await expect(page.locator('.chat-turn')).toHaveCount(0);

@@ -12,6 +12,8 @@ const hashedAsset = /-[\w-]{8}\.[a-z0-9]+$/i;
 function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDir, logger = console,
   siteOrigin, production = false, cspReportOnly = true } = {}) {
   const app = express();
+  const trustedOrigins = new Set(production ? [siteOrigin].filter(Boolean) : [...origins, siteOrigin].filter(Boolean));
+  app.locals.production = production;
   app.disable('x-powered-by');
   app.set('trust proxy', proxyHops);
   app.set('query parser', 'simple');
@@ -57,11 +59,12 @@ function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDi
   app.use('/api', cors({
     origin: (origin, callback) => callback(null, Boolean(origin && origins.includes(origin))),
     methods: ['GET', 'HEAD', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Authorization', 'Content-Type'],
+    credentials: !production,
+    allowedHeaders: ['X-SchemeSathi-Request', 'Content-Type'],
   }));
   app.use(compression({
     filter(req, res) {
-      return ['GET', 'HEAD'].includes(req.method) && !req.headers.authorization
+      return ['GET', 'HEAD'].includes(req.method) && !req.headers.cookie && !req.headers.authorization
         && !req.path.startsWith('/api/auth/') && compression.filter(req, res);
     },
   }));
@@ -84,6 +87,13 @@ function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDi
     next();
   });
   app.use('/api/eligibility', limit(90, 60 * 1000, (req) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method)));
+  app.use('/api', (req, res, next) => {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+    if (!trustedOrigins.has(req.get('Origin')) || req.get('X-SchemeSathi-Request') !== '1') {
+      return res.status(403).json({ error: 'Request origin could not be confirmed' });
+    }
+    next();
+  });
   app.use('/api', express.json({ limit: '16kb', inflate: false }));
   app.get('/api/health/live', (_req, res) => {
     res.set('Cache-Control', 'no-store').json({ status: 'ok' });

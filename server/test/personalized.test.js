@@ -13,8 +13,8 @@ let token;
 
 before(async () => {
   process.env.JWT_SECRET = randomUUID();
-  token = jwt.sign({ id: '000000000000000000000001', role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  const app = createApp();
+  token = jwt.sign({ id: '000000000000000000000001', role: 'user' }, process.env.JWT_SECRET, { audience: 'schemesathi-cookie-v1', expiresIn: '1h' });
+  const app = createApp({ siteOrigin: 'https://schemes.example.org' });
   server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   base = `http://127.0.0.1:${server.address().port}/api`;
@@ -23,8 +23,8 @@ before(async () => {
 after(() => server?.close());
 
 function post(path, data, signedIn = true) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (signedIn) headers.Authorization = `Bearer ${token}`;
+  const headers = { 'Content-Type': 'application/json', Origin: 'https://schemes.example.org', 'X-SchemeSathi-Request': '1' };
+  if (signedIn) headers.Cookie = `schemesathi_session=${token}`;
   return fetch(base + path, { method: 'POST', headers, body: JSON.stringify(data) });
 }
 

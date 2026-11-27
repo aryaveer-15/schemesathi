@@ -11,7 +11,7 @@ You need Node.js 24, npm, and a MongoDB database.
 3. In `server`, run `npm run seed` to add the maintained schemes. This inserts missing slugs and preserves existing scheme records. Run it against the database configured in `server/.env`.
 4. In `server`, run `npm run dev`. In a second terminal, run `npm run dev` in `client` and open the URL Vite prints.
 
-In development the client uses `http://localhost:5000` by default. The production build calls `/api` on the same origin. Set `VITE_API_URL` before running or building the client if the API uses a separate origin.
+In development use the same hostname for frontend and API (localhost or 127.0.0.1) so SameSite cookies work. In development the client uses `http://localhost:5000` by default. The production build calls `/api` on the same origin. Set `VITE_API_URL` for a separate local development API. Production cookie sign-in requires same-origin hosting.
 
 ## Checks and production build
 
@@ -28,14 +28,15 @@ In development the client uses `http://localhost:5000` by default. The productio
 | `MONGO_URI` | Yes | Yes | MongoDB connection string for the API, seed and catalogue import. |
 | `JWT_SECRET` | Yes | Yes | Random signing secret of at least 32 bytes in production. Keep the value across deploys to preserve existing sessions. |
 | `NODE_ENV` | Set by Docker | No | The image sets `production`, enabling serving the built client and HTTPS-only transport policy. |
+| `SERVE_CLIENT` | No | No | Set to true to serve the built client in local development Docker tests. |
 | `HOST` | No | No | Local default is loopback. The image listens on `0.0.0.0`. |
 | `PORT` | No | No | Local and Docker default is 5000. Render can supply its own value. |
 | `MONGO_DNS_SERVERS` | No | No | Comma-separated DNS resolver override for MongoDB SRV records. Production otherwise uses the host resolver. |
-| `CORS_ORIGINS` | No | No | Exact comma-separated origins when a separate frontend uses this API. Leave unset for same-origin hosting. |
-| `VITE_API_URL` | No | No | Browser-visible build-time API origin for a separately hosted client. The bundled production client uses the same origin. |
+| `CORS_ORIGINS` | No | No | Exact comma-separated local frontend origins for credentialed development requests. Production write trust uses the canonical HTTPS origin. |
+| `VITE_API_URL` | No | No | Optional local development API origin. Leave unset for same-origin Render deployment. |
 | `TRUST_PROXY_HOPS` | No | No | Defaults to one on Render and zero elsewhere. Override only after confirming the fixed trusted ingress chain. |
 | `CSP_MODE` | No | No | Full CSP defaults to `report-only`. Use `enforce` after testing the deployed site. |
-| `PUBLIC_SITE_ORIGIN` | No | No | The confirmed HTTPS public origin for preview and canonical URLs. Defaults to Render's external URL on Render. |
+| `PUBLIC_SITE_ORIGIN` | No | No | The confirmed HTTPS public origin for write protection, previews and canonical URLs. Defaults to Render's external URL on Render. |
 | `RENDER`, `RENDER_EXTERNAL_URL` | Provided by Render | No | Platform-provided hosting indicator and external URL. |
 | `PLAYWRIGHT_CHANNEL` | Test only | No | Set to `chrome` to run browser tests with installed Chrome. |
 
@@ -123,3 +124,16 @@ Use an export that allows redistribution. In `server`, run `npm run import:catal
 The JSON has a top-level `sourceUrl` for the dataset and a `schemes` array. Each scheme requires a unique `slug`, a `category` from `server/catalogFields.js`, a `level` of `central` or `state`, a `state` for state schemes, an official `sourceUrl`, a `title`, and a `summary`. Title and summary can be English strings or objects keyed by locale, with `en` required. Both URLs must use HTTPS. The importer accepts up to 20,000 schemes per file.
 
 Each entry can also include up to 30 `eligibilityRequirements` for the scheme detail page. Each item can be an English string or a translation object with `en` required. The profile matcher uses reviewed rules defined in the application.
+
+## Cookie sign-in on Render and localhost
+
+Serve the client and API at the same HTTPS origin. Leave VITE_API_URL unset in the Render build. The trusted production write origin is the validated origin from PUBLIC_SITE_ORIGIN, or RENDER_EXTERNAL_URL when RENDER=true. For a custom domain set PUBLIC_SITE_ORIGIN to the exact public HTTPS scheme and hostname. For the standard Render hostname no additional variable is required. Missing configuration denies writes with 403. Invalid configuration stops startup. Host, X-Forwarded-Host and the proxy hop count do not determine this origin. Production ignores CORS_ORIGINS for write trust. Every unsafe API request requires the exact Origin and X-SchemeSathi-Request header set to 1.
+
+The host-only /api cookie is HttpOnly and SameSite=Lax, with Secure enabled in production. The cookie and signed token each have a seven-day lifetime (604800 seconds). Existing browser sign-ins require a new login. Logout expires the browser cookie. A copied token can remain usable until its signed expiry.
+
+For a local Docker test, use local-only database credentials in MONGO_URI and a local JWT_SECRET in your PowerShell environment. SERVE_CLIENT=true serves the built client in development. CORS_ORIGINS explicitly opts the listed loopback origins into local testing. Publish the port on loopback only.
+
+```powershell
+docker build -t schemesathi:pass10 .
+docker run --rm -p 127.0.0.1:5000:5000 -e NODE_ENV=development -e SERVE_CLIENT=true -e MONGO_URI -e JWT_SECRET -e "CORS_ORIGINS=http://localhost:5000,http://127.0.0.1:5000" schemesathi:pass10
+```

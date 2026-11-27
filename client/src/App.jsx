@@ -67,7 +67,7 @@ function RouteFocus({ pathname, lastPathRef, children }) {
 
 export default function App() {
   const { t, lang, setLang } = useLang();
-  const { user, token, signOut } = useAuth();
+  const { user, status, notice, refresh, signOut } = useAuth();
   const { pathname, search } = useLocation();
   const lastPathRef = useRef(pathname);
 
@@ -109,6 +109,7 @@ export default function App() {
       </header>
 
       <div id="content" tabIndex={-1}>
+        {notice && <p role="status" lang="en">{notice}</p>}
         <RouteBoundary key={pathname} fallback={<RouteFailure />}>
           <Suspense fallback={<main className="page"><p role="status">{t('loading')}…</p></main>}>
             <RouteFocus pathname={pathname} lastPathRef={lastPathRef}>
@@ -119,7 +120,9 @@ export default function App() {
                 <Route path="/schemes" element={<Schemes />} />
                 <Route path="/schemes/:id" element={<SchemeDetails />} />
                 <Route path="/eligibility" element={<Eligibility />} />
-                <Route path="/my-schemes" element={token ? <FindSchemes /> : <Navigate to={{ pathname: '/login', search }} replace />} />
+                <Route path="/my-schemes" element={user ? <FindSchemes />
+                  : status === 'loading' ? <main className="page"><p role="status">{t('loading')}</p></main>
+                  : status === 'unavailable' ? <main className="page"><h1>{t('loadFailed')}</h1><button onClick={refresh}>{t('retry')}</button></main> : <Navigate to={{ pathname: '/login', search }} replace />} />
                 <Route path="/scheme-chat" element={<SchemeChat />} />
                 <Route path="*" element={<main className="page">
                 <h1>{t('pageMissing')}</h1>

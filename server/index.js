@@ -43,9 +43,9 @@ const app = createApp({
   origins,
   proxyHops,
   isReady: () => mongoose.connection.readyState === 1,
-  staticDir: production ? path.resolve(__dirname, '../client/dist') : undefined,
+  staticDir: production || process.env.SERVE_CLIENT === 'true' ? path.resolve(__dirname, '../client/dist') : undefined,
   production,
-  siteOrigin: deploymentOrigin(process.env.PUBLIC_SITE_ORIGIN || process.env.RENDER_EXTERNAL_URL),
+  siteOrigin: deploymentOrigin(process.env.PUBLIC_SITE_ORIGIN || (onRender ? process.env.RENDER_EXTERNAL_URL : undefined)),
   cspReportOnly: cspMode === 'report-only',
 });
 

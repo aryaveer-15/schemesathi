@@ -6,11 +6,22 @@ import { LangProvider } from './i18n';
 import App from './App.jsx';
 import './index.css';
 
+function removeLegacySignIn() {
+  try {
+    const present = localStorage.getItem('schemesathi.auth') !== null;
+    localStorage.removeItem('schemesathi.auth');
+    return present;
+  } catch {
+    return false;
+  }
+}
+
+const migrated = removeLegacySignIn();
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <LangProvider>
-        <AuthProvider>
+        <AuthProvider migrated={migrated}>
           <App />
         </AuthProvider>
       </LangProvider>

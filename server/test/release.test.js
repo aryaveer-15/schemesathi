@@ -101,12 +101,12 @@ test('allows only configured cross-origin callers and reports readiness', async 
 test('rate limits repeated auth requests but leaves public browsing available', async () => {
   for (let index = 0; index < 20; index += 1) {
     const response = await fetch(`${base}/api/auth/login`, {
-      method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}',
+      method: 'POST', headers: { 'content-type': 'application/json', Origin: 'https://schemes.example.org', 'X-SchemeSathi-Request': '1' }, body: '{}',
     });
     assert.equal(response.status, 400);
   }
   const response = await fetch(`${base}/api/auth/register`, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}',
+    method: 'POST', headers: { 'content-type': 'application/json', Origin: 'https://schemes.example.org', 'X-SchemeSathi-Request': '1' }, body: '{}',
   });
   assert.equal(response.status, 429);
   assert.ok(Number(response.headers.get('retry-after')) > 0);

@@ -16,8 +16,8 @@ let requestNumber = 0;
 
 before(async () => {
   process.env.JWT_SECRET = randomUUID();
-  token = jwt.sign({ id: '000000000000000000000001', role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  server = createApp({ proxyHops: 1, logger: { error: (entry) => logs.push(entry) } }).listen(0, '127.0.0.1');
+  token = jwt.sign({ id: '000000000000000000000001', role: 'user' }, process.env.JWT_SECRET, { audience: 'schemesathi-cookie-v1', expiresIn: '1h' });
+  server = createApp({ siteOrigin: 'https://schemes.example.org', proxyHops: 1, logger: { error: (entry) => logs.push(entry) } }).listen(0, '127.0.0.1');
   await once(server, 'listening');
   base = `http://127.0.0.1:${server.address().port}/api/eligibility`;
 });
@@ -29,8 +29,8 @@ function post(path, body) {
   return fetch(`${base}/${path}`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json', Origin: 'https://schemes.example.org', 'X-SchemeSathi-Request': '1',
+      Cookie: `schemesathi_session=${token}`,
       'X-Forwarded-For': `198.18.${Math.floor(index / 250)}.${index % 250 + 1}`,
     },
     body: JSON.stringify(body),

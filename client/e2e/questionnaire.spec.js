@@ -84,12 +84,9 @@ test('360px questionnaire supports keyboard navigation, editing and pruning with
 
 test('numeric uncertainty reaches only the matcher and keeps public access separate', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 });
-  await page.addInitScript(() => localStorage.setItem('schemesathi.auth', JSON.stringify({
-    token: 'test-token', user: { name: 'Test resident' },
-  })));
   const entries = questionnaire.filter(({ slug }) => ['pmjdy', 'jan-aushadhi'].includes(slug));
   const writes = [];
-  await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user: { name: 'Test resident' } } }));
+  await page.route('**/api/auth/session', (route) => route.fulfill({ json: { user: { name: 'Test resident' } } }));
   await page.route('**/api/eligibility/questionnaire', (route) => route.fulfill({ json: entries }));
   await page.route('**/api/eligibility/matches', (route) => {
     const { answers, profile } = route.request().postDataJSON();

@@ -15,7 +15,7 @@ process.env.JWT_SECRET = secret;
 const quiet = {};
 
 async function serve(context, options = {}) {
-  const server = createApp({ logger: quiet, ...options }).listen(0, '127.0.0.1');
+  const server = createApp({ siteOrigin: 'https://schemes.example.org', logger: quiet, ...options }).listen(0, '127.0.0.1');
   context.after(() => server.close());
   await once(server, 'listening');
   return 'http://127.0.0.1:' + server.address().port;
@@ -24,7 +24,7 @@ async function serve(context, options = {}) {
 function post(path, data, headers = {}) {
   return fetch(path, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', ...headers },
+    headers: { 'content-type': 'application/json', Origin: 'https://schemes.example.org', 'X-SchemeSathi-Request': '1', ...headers },
     body: JSON.stringify(data),
   });
 }
@@ -69,17 +69,17 @@ test('unknown and wrong credentials both use bcrypt and receive the same respons
   assert.deepEqual(find.mock.calls[0].arguments, [{ email: 'resident@example.org' }]);
 });
 
-test('signed bearer claims and JWT algorithms are checked before querying the user', async (context) => {
+test('signed session claims and JWT algorithms are checked before querying the user', async (context) => {
   const find = context.mock.method(User, 'findById', async (id) => ({ _id: id, role: 'user' }));
   const base = await serve(context);
   for (const token of [
-    jwt.sign({ id: { $ne: null }, role: 'user' }, secret, { expiresIn: '1h' }),
-    jwt.sign({ id: userId, role: 'user' }, secret, { algorithm: 'HS384', expiresIn: '1h' }),
-    jwt.sign({ id: userId, role: 'user' }, secret),
-  ]) assert.equal((await fetch(base + '/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })).status, 401);
+    jwt.sign({ id: { $ne: null }, role: 'user' }, secret, { audience: 'schemesathi-cookie-v1', expiresIn: '1h' }),
+    jwt.sign({ id: userId, role: 'user' }, secret, { algorithm: 'HS384', audience: 'schemesathi-cookie-v1', expiresIn: '1h' }),
+    jwt.sign({ id: userId, role: 'user' }, secret, { audience: 'schemesathi-cookie-v1' }),
+  ]) assert.equal((await fetch(base + '/api/auth/me', { headers: { Cookie: 'schemesathi_session=' + token } })).status, 401);
   assert.equal(find.mock.callCount(), 0);
-  const goodToken = jwt.sign({ id: userId, role: 'user' }, secret, { expiresIn: '1h' });
-  assert.equal((await fetch(base + '/api/auth/me', { headers: { Authorization: 'Bearer ' + goodToken } })).status, 200);
+  const goodToken = jwt.sign({ id: userId, role: 'user' }, secret, { audience: 'schemesathi-cookie-v1', expiresIn: '1h' });
+  assert.equal((await fetch(base + '/api/auth/me', { headers: { Cookie: 'schemesathi_session=' + goodToken } })).status, 200);
 });
 
 test('the single trusted hop separates clients and ignores a forged left-hand entry', async (context) => {
@@ -114,9 +114,9 @@ test('logs allowlisted fields only and database errors return a generic response
   }, { Authorization: 'Bearer tokenMarker', Cookie: 'cookieMarker=private' });
   assert.equal(response.status, 500);
   assert.deepEqual(await response.json(), { error: 'Server error', requestId: response.headers.get('x-request-id') });
-  const token = jwt.sign({ id: userId, role: 'user' }, secret, { expiresIn: '1h' });
+  const token = jwt.sign({ id: userId, role: 'user' }, secret, { audience: 'schemesathi-cookie-v1', expiresIn: '1h' });
   const matcher = await post(base + '/api/eligibility/matches?input=questionMarker', { profile: { age: 117 } },
-    { Authorization: 'Bearer ' + token });
+    { Cookie: 'schemesathi_session=' + token });
   assert.equal(matcher.status, 200);
   await fetch(base + '/api/unknown/privatePathMarker?q=queryMarker');
   assert.equal(logs.length, 3);
@@ -149,4 +149,97 @@ test('the candidate CSP defaults to reports while the baseline restrictions stay
   const strict = (await fetch(enforce + '/api/health')).headers;
   assert.match(strict.get('content-security-policy'), /script-src 'self'/);
   assert.equal(strict.get('content-security-policy-report-only'), null);
+});
+
+const trusted = 'https://schemes.example.org';
+const writeHeaders = { Origin: trusted, 'X-SchemeSathi-Request': '1' };
+for (const path of ['/auth/register', '/auth/login', '/auth/logout', '/eligibility/matches', '/eligibility/pm-kisan']) {
+  test('rejects missing origin, foreign origin and missing CSRF header on ' + path, async (context) => {
+    const base = await serve(context);
+    for (const headers of [
+      { 'X-SchemeSathi-Request': '1' },
+      { ...writeHeaders, Origin: 'https://foreign.example', 'X-Forwarded-Host': 'foreign.example' },
+      { Origin: trusted },
+    ]) {
+      const response = await fetch(base + '/api' + path, { method: 'POST', headers });
+      assert.equal(response.status, 403);
+      assert.equal(response.headers.get('set-cookie'), null);
+    }
+  });
+}
+
+test('production without a canonical origin rejects writes even from an allowed CORS origin', async (context) => {
+  const base = await serve(context, { production: true, siteOrigin: undefined, origins: [trusted] });
+  assert.equal((await fetch(base + '/api/auth/logout', { method: 'POST', headers: writeHeaders })).status, 403);
+});
+
+test('login and registration issue a seven-day private cookie and logout expires the identical scope', async (context) => {
+  const logs = [];
+  const capture = (value) => logs.push(value);
+  const user = { _id: userId, role: 'user', name: 'Resident', email: 'resident@example.org', passwordHash: 'fixture' };
+  context.mock.method(User, 'findOne', () => {
+    const found = Promise.resolve(user);
+    found.select = () => ({ lean: async () => null });
+    return found;
+  });
+  context.mock.method(User, 'create', async () => user);
+  context.mock.method(User, 'findById', async () => user);
+  context.mock.method(bcrypt, 'compare', async () => true);
+  const base = await serve(context, { production: true, logger: { info: capture, error: capture } });
+  const profile = base + '/api/auth/me';
+  const errors = [];
+  const anonymous = await fetch(base + '/api/auth/session');
+  assert.deepEqual(await anonymous.json(), { user: null });
+  assert.equal(anonymous.headers.get('cache-control'), 'no-store');
+  for (const action of ['register', 'login']) {
+    const data = { email: user.email, password: 'fixture-password' };
+    if (action === 'register') data.name = user.name;
+    const response = await post(base + '/api/auth/' + action, data);
+    assert.equal(response.status, action === 'register' ? 201 : 200);
+    assert.deepEqual(Object.keys(await response.json()), ['user']);
+    const [pair, ...attrs] = response.headers.get('set-cookie').split('; ');
+    const [name, token] = pair.split('=');
+    assert.equal(name, 'schemesathi_session');
+    const flags = attrs.filter((item) => !/^(Max-Age|Expires)=/.test(item)).sort();
+    assert.deepEqual(flags, ['HttpOnly', 'Path=/api', 'SameSite=Lax', 'Secure']);
+    assert.ok(attrs.includes('Max-Age=604800'));
+    const claims = jwt.verify(token, secret, { audience: 'schemesathi-cookie-v1' });
+    assert.equal(claims.exp - claims.iat, 604800);
+    assert.equal((await fetch(profile, { headers: { Cookie: pair } })).status, 200);
+    const expired = jwt.sign({ id: userId, role: 'user' }, secret, { audience: claims.aud, expiresIn: -1 });
+    const legacy = jwt.sign({ id: userId, role: 'user' }, secret, { expiresIn: '7d' });
+    for (const headers of [{}, { Authorization: 'Bearer ' + token }, { Cookie: name + '=' + expired },
+      { Cookie: name + '=' + legacy }, { Cookie: pair + '; ' + pair }, { Cookie: pair + 'fake' }]) {
+      const denied = await fetch(profile, { headers });
+      assert.equal(denied.status, 401);
+      errors.push(await denied.text());
+      assert.equal(denied.headers.get('set-cookie'), null);
+    }
+    const logout = await post(base + '/api/auth/logout', {}, { Cookie: pair });
+    assert.equal(logout.status, 204);
+    const [cleared, ...clearAttrs] = logout.headers.get('set-cookie').split('; ');
+    assert.equal(cleared, name + '=');
+    assert.deepEqual(clearAttrs.filter((item) => !item.startsWith('Expires=')).sort(), flags);
+    assert.ok(clearAttrs.includes('Expires=Thu, 01 Jan 1970 00:00:00 GMT'));
+    const output = [...logs, ...errors].join('\n');
+    assert.ok(!output.includes(token));
+    assert.doesNotMatch(output, /cookie|eyJ/i);
+  }
+});
+
+test('local credentialed preflight admits the configured frontend only', async (context) => {
+  const local = 'http://localhost:5000';
+  const base = await serve(context, { origins: [local] });
+  for (const origin of [local, 'http://127.0.0.1:5000']) {
+    const response = await fetch(base + '/api/auth/logout', { method: 'OPTIONS', headers: {
+      Origin: origin, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'x-schemesathi-request',
+    } });
+    assert.equal(response.headers.get('access-control-allow-origin'), origin === local ? local : null);
+    if (origin === local) {
+      assert.equal(response.headers.get('access-control-allow-credentials'), 'true');
+      assert.match(response.headers.get('access-control-allow-headers'), /X-SchemeSathi-Request/i);
+    }
+    assert.equal((await fetch(base + '/api/auth/logout', { method: 'POST',
+      headers: { ...writeHeaders, Origin: origin } })).status, origin === local ? 204 : 403);
+  }
 });

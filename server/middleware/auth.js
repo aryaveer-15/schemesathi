@@ -1,13 +1,22 @@
 const jwt = require('jsonwebtoken');
 
+const sessionName = 'schemesathi_session';
+const audience = 'schemesathi-cookie-v1';
+
+function sessionCookies(req) {
+  return (req.headers.cookie || '').split(';').map((part) => part.trim())
+    .filter((part) => part.startsWith(sessionName + '='));
+}
+
 function requireAuth(req, res, next) {
-  const header = req.headers.authorization || '';
-  if (!header) return res.status(401).json({ error: 'Missing token' });
+  const cookies = sessionCookies(req);
+  if (!cookies.length) return res.status(401).json({ error: 'Missing token' });
   try {
-    if (header.length > 2048 || !/^Bearer [\w-]+\.[\w-]+\.[\w-]+$/.test(header)) {
+    const token = cookies[0].slice(sessionName.length + 1);
+    if (cookies.length !== 1 || token.length > 2048 || !/^[\w-]+\.[\w-]+\.[\w-]+$/.test(token)) {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
-    const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET, { algorithms: ['HS256'] });
+    const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'], audience });
     if (typeof payload.id !== 'string' || !/^[0-9a-f]{24}$/i.test(payload.id)
       || !['user', 'editor', 'admin'].includes(payload.role) || !Number.isSafeInteger(payload.exp)) {
       return res.status(401).json({ error: 'Invalid or expired token' });
@@ -28,4 +37,4 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { requireAuth, requireRole };
+module.exports = { requireAuth, requireRole, sessionName, sessionCookies, audience };
