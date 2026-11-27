@@ -127,7 +127,7 @@ Each entry can also include up to 30 `eligibilityRequirements` for the scheme de
 
 ## Cookie sign-in on Render and localhost
 
-Serve the client and API at the same HTTPS origin. Leave VITE_API_URL unset in the Render build. The trusted production write origin is the validated origin from PUBLIC_SITE_ORIGIN, or RENDER_EXTERNAL_URL when RENDER=true. For a custom domain set PUBLIC_SITE_ORIGIN to the exact public HTTPS scheme and hostname. For the standard Render hostname no additional variable is required. Missing configuration denies writes with 403. Invalid configuration stops startup. Host, X-Forwarded-Host and the proxy hop count do not determine this origin. Production ignores CORS_ORIGINS for write trust. Every unsafe API request requires the exact Origin and X-SchemeSathi-Request header set to 1.
+Serve the client and API at the same HTTPS origin. Leave VITE_API_URL unset in the Render build. The trusted production write origin is the validated origin from PUBLIC_SITE_ORIGIN, or RENDER_EXTERNAL_URL when RENDER=true. For a custom domain set PUBLIC_SITE_ORIGIN to the exact public HTTPS scheme and hostname. For the standard Render hostname no additional variable is required. On Render, missing both origin settings stops startup. Outside Render, missing origin configuration in production denies writes with 403. Invalid configuration stops startup. Host, X-Forwarded-Host and the proxy hop count do not determine this origin. Production ignores CORS_ORIGINS for write trust. Every unsafe API request requires the exact Origin and X-SchemeSathi-Request header set to 1.
 
 The host-only /api cookie is HttpOnly and SameSite=Lax, with Secure enabled in production. The cookie and signed token each have a seven-day lifetime (604800 seconds). Existing browser sign-ins require a new login. Logout expires the browser cookie. A copied token can remain usable until its signed expiry.
 
@@ -137,3 +137,9 @@ For a local Docker test, use local-only database credentials in MONGO_URI and a 
 docker build -t schemesathi:pass10 .
 docker run --rm -p 127.0.0.1:5000:5000 -e NODE_ENV=development -e SERVE_CLIENT=true -e MONGO_URI -e JWT_SECRET -e "CORS_ORIGINS=http://localhost:5000,http://127.0.0.1:5000" schemesathi:pass10
 ```
+
+## Public indexing and CSP on Render
+
+Set PUBLIC_SITE_ORIGIN to https://schemesathi-qx5e.onrender.com. Render's RENDER_EXTERNAL_URL supplies the fallback when the explicit setting is absent. Express serves /sitemap.xml from the bundled catalogue and /robots.txt with the sitemap location and a crawl exclusion for /api.
+
+In the Render service's Environment settings, set CSP_MODE to enforce, then save and deploy. To return to reporting, set CSP_MODE to report-only or remove it and redeploy. The default reports the full policy and still enforces the existing baseline restrictions.

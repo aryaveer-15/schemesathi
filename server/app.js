@@ -7,6 +7,8 @@ const compression = require('compression');
 const helmet = require('helmet');
 const { createSchemePages } = require('./schemeMetadata');
 
+const catalog = require('./catalog');
+
 const hashedAsset = /-[\w-]{8}\.[a-z0-9]+$/i;
 
 function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDir, logger = console,
@@ -107,6 +109,24 @@ function createApp({ origins = [], proxyHops = 0, isReady = () => true, staticDi
   app.use('/api/schemes', require('./routes/schemes'));
   app.use('/api/eligibility', require('./routes/eligibility'));
   app.use('/api', (_req, res) => res.status(404).json({ error: 'API route not found' }));
+
+  const paths = ['/', '/schemes', ...catalog.map(({ slug }) => '/schemes/' + encodeURIComponent(slug))];
+  const sitemap = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...paths.map((pathname) => '  <url><loc>' + (siteOrigin + pathname).replaceAll('&', '&amp;') + '</loc></url>'),
+    '</urlset>',
+  ].join('\n');
+
+  function crawlerFile(type, body) {
+    return (_req, res) => {
+      res.set('Cache-Control', 'no-cache');
+      if (!siteOrigin) return res.status(503).type('text').send('Public site origin is not configured.');
+      res.type(type).send(body);
+    };
+  }
+  app.get('/sitemap.xml', crawlerFile('application/xml', sitemap));
+  app.get('/robots.txt', crawlerFile('text', 'User-agent: *\nAllow: /\nDisallow: /api\nSitemap: ' + siteOrigin + '/sitemap.xml\n'));
 
   if (staticDir) {
     app.use(express.static(staticDir, {

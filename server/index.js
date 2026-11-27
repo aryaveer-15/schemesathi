@@ -4,6 +4,7 @@ const path = require('node:path');
 require('dotenv').config({ quiet: true });
 const mongoose = require('mongoose');
 const createApp = require('./app');
+const siteConfig = require('./siteConfig');
 
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '127.0.0.1';
@@ -22,17 +23,6 @@ if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
 if (production && Buffer.byteLength(process.env.JWT_SECRET) < 32) {
   throw new Error('JWT_SECRET must be at least 32 bytes in production');
 }
-const cspMode = process.env.CSP_MODE ?? 'report-only';
-if (!['report-only', 'enforce'].includes(cspMode)) throw new Error('CSP_MODE must be report-only or enforce');
-
-function deploymentOrigin(value) {
-  if (!value) return undefined;
-  let url;
-  try { url = new URL(value); } catch { throw new Error('Set PUBLIC_SITE_ORIGIN to a valid HTTP origin'); }
-  if ((!production && url.protocol === 'http:' || url.protocol === 'https:')
-    && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash) return url.origin;
-  throw new Error('Set PUBLIC_SITE_ORIGIN to an HTTPS origin with no path, query or credentials');
-}
 if (process.env.MONGO_DNS_SERVERS) {
   dns.setServers(process.env.MONGO_DNS_SERVERS.split(',').map((value) => value.trim()));
 } else if (!production) {
@@ -45,8 +35,7 @@ const app = createApp({
   isReady: () => mongoose.connection.readyState === 1,
   staticDir: production || process.env.SERVE_CLIENT === 'true' ? path.resolve(__dirname, '../client/dist') : undefined,
   production,
-  siteOrigin: deploymentOrigin(process.env.PUBLIC_SITE_ORIGIN || (onRender ? process.env.RENDER_EXTERNAL_URL : undefined)),
-  cspReportOnly: cspMode === 'report-only',
+  ...siteConfig(process.env),
 });
 
 mongoose
