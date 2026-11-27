@@ -153,5 +153,7 @@ vite.config.ts.timestamp-*
 /VERIFICATION_CHECKLIST.md
 /server/verificationRecords.json.lock
 /server/verificationRecords.json.*.tmp
+/exports/*
+!/exports/.gitkeep
 
 SchemeSathi - Project*.pdf

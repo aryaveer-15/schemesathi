@@ -11,7 +11,8 @@
     "import:catalog": "node seed/catalogImport.js",
     "check:links": "node scripts/checkSchemeLinks.js",
     "verify:checklist": "node scripts/verificationChecklist.js",
-    "verify:record": "node scripts/recordVerification.js"
+    "verify:record": "node scripts/recordVerification.js",
+    "export:reviews": "node scripts/exportReviews.js"
   },
   "keywords": [],
   "author": "",

@@ -102,6 +102,12 @@ git diff -- server/verificationRecords.json
 
 Use `--banner on` to enable it again. The original photo files stay in the repository and can still be used by other schemes.
 
+### Export reviews for Google Sheets
+
+From the repository root, run `npm.cmd --prefix server run export:reviews` in PowerShell. If `LINK_REPORT.md` is missing or predates its “Needs human check” section, first run `npm.cmd --prefix server run check:links`.
+
+Import the files from `exports/` as separate tabs in Google Sheets and turn off automatic conversion of text to numbers, dates and formulas. The CSVs use UTF-8 with a byte order mark. Verification rows follow checklist order. Translation files show the exact dictionary text, including entries the site currently displays in English pending review. Reviewer columns start blank. Move any existing exports before rerunning so review notes are preserved.
+
 When updating user-facing text or maintained scheme content, update the corresponding translations in `client/src/locales/`. The original English, Hindi, and Kannada copies are in `client/src/i18n.jsx`, `client/src/eligibilityContent.js`, and `server/catalog.js`.
 
 Eligibility results explain whether the answers match the criteria checked by SchemeSathi. Users should confirm current rules with the official programme before applying. The housing check covers PMAY Urban 2.0. PM-JAY coverage for people below 70 requires checking the official beneficiary portal. The pension check covers old-age and widow pensions. The questionnaire directs disability pension applicants to verify applicable rules with their state office.
