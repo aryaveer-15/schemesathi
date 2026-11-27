@@ -2,6 +2,8 @@
 
 SchemeSathi is a government-scheme directory with preliminary eligibility checks in English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Kannada, Odia, and Malayalam.
 
+For a project map, step-by-step editing recipes, and deployment instructions, see the [developer guide](DEVELOPER_GUIDE.md).
+
 ## Run locally
 
 You need Node.js 24, npm, and a MongoDB database.
@@ -15,9 +17,9 @@ In development use the same hostname for frontend and API (localhost or 127.0.0.
 
 ## Checks and production build
 
-- In `server`, run `npm test` for the eligibility API tests. They use a local HTTP server and do not need MongoDB.
+- In `server`, run `npm test` for the server test suite. They use a local HTTP server and do not need MongoDB.
 - In `client`, run `npm run lint` and `npm run build`. The build outputs static files in `client/dist`.
-- In `client`, run `npx playwright install chromium` once, then `npm run test:e2e` to run desktop and mobile browser tests. They simulate API responses so they can cover outages and expired sessions without a live database. Set `PLAYWRIGHT_CHANNEL=chrome` to use an installed Chrome browser.
+- In `client`, run `npx playwright install chromium` once, then `npm run test:e2e` to run desktop and mobile browser tests. They simulate API responses so they can cover outages and expired sessions without a live database. Set `$env:PLAYWRIGHT_CHANNEL = 'chrome'` in PowerShell to use an installed Chrome browser.
 
 ## Publish
 
@@ -45,23 +47,23 @@ In development use the same hostname for frontend and API (localhost or 127.0.0.
 From the repository root, with Docker Desktop running and a local `server/.env` pointing to a test MongoDB database, run these PowerShell commands.
 
 ```powershell
-docker build --pull --tag schemesathi:pass7 .
-docker run --detach --rm --name schemesathi-pass7 --env-file .\server\.env -p 127.0.0.1:5000:5000 schemesathi:pass7
+docker build --pull --tag schemesathi:local .
+docker run --detach --rm --name schemesathi-local --env-file .\server\.env -e NODE_ENV=development -e SERVE_CLIENT=true -e PORT=5000 -e HOST=0.0.0.0 -e "CORS_ORIGINS=http://localhost:5000,http://127.0.0.1:5000" -p 127.0.0.1:5000:5000 schemesathi:local
 Invoke-RestMethod http://127.0.0.1:5000/api/health
-docker exec schemesathi-pass7 id -u
-docker exec schemesathi-pass7 sh -c 'test ! -e /app/server/.env && test ! -d /app/server/node_modules/nodemon && test ! -d /app/client/node_modules'
-docker stop schemesathi-pass7
+docker exec schemesathi-local id -u
+docker exec schemesathi-local sh -c 'test ! -e /app/server/.env && test ! -d /app/server/node_modules/nodemon && test ! -d /app/client/node_modules'
+docker stop schemesathi-local
 ```
 
 The container user ID must be nonzero. Use the terminal or Render logs to check startup if the health request fails. A container connecting to MongoDB on the Windows host needs a reachable host address rather than its own loopback interface.
 
 1. Push the reviewed feature branch, then merge it into the branch connected to Render. Confirm the Render service uses the repository Dockerfile and the root build context.
-2. Keep `MONGO_URI` and `JWT_SECRET` in the service's secret settings. No new variable is required for standard Render hosting. Keep the first deploy in CSP report-only mode. Set `PUBLIC_SITE_ORIGIN` only after confirming the public URL if it differs from the Render-provided origin.
+2. Keep `MONGO_URI` and `JWT_SECRET` in the service's secret settings. No new variable is required for standard Render hosting. Keep the first deploy in CSP report-only mode. For this service, the confirmed `PUBLIC_SITE_ORIGIN` is `https://schemesathi-qx5e.onrender.com`. Render supplies `RENDER_EXTERNAL_URL` as the fallback.
 3. Set the Render health check to `/api/health`. It returns HTTP 503 while the MongoDB connection is unavailable. `/api/health/live` only confirms that HTTP is responding. Run the catalogue seed once for a new database to add missing entries.
 4. Smoke-test sign-in, the questionnaire, results, help chat, Urdu and a direct scheme link. Verify a known scheme has preview tags in the raw HTML and a missing scheme returns 404. From two real networks, confirm each has its own rate-limit counter before relying on it. Keep the one-hop setting only when the last Render hop supplies the client IP at the right of the forwarded chain and traffic reaches Express through that ingress.
-5. If deployment fails, use Render **Deploys → Rollback** to the previous successful build. Verify health and sign-in again. Revert the offending Git commit on the deployed branch before re-enabling automatic deploys. [Render rollback documentation](https://render.com/docs/rollbacks)
+5. If deployment fails, open **Deploys**, select the previous successful deploy, and click **Rollback → Rollback to this deploy**. Dashboard rollback disables automatic deploys. Verify health and sign-in again. Revert the offending Git commit on the deployed branch before re-enabling automatic deploys. [Render rollback documentation](https://render.com/docs/rollbacks)
 
-Login and registration share 20 requests per client per 15 minutes. Auth reads allow 120 requests per 15 minutes and eligibility submissions allow 90 per minute. These counters are per process. Request logs contain method, fixed route pattern, status, duration and the response's `X-Request-Id`. They exclude request values, IP addresses and errors' internal messages.
+Login, registration and logout share 20 requests per client per 15 minutes. Auth reads allow 120 requests per 15 minutes and eligibility submissions allow 90 per minute. These counters are per process. Request logs contain method, fixed route pattern, status, duration and the response's `X-Request-Id`. They exclude request values, IP addresses and errors' internal messages.
 
 ## Maintain scheme information
 
@@ -109,7 +111,7 @@ From the repository root, run `npm.cmd --prefix server run export:reviews` in Po
 
 Import the files from `exports/` as separate tabs in Google Sheets and turn off automatic conversion of text to numbers, dates and formulas. The CSVs use UTF-8 with a byte order mark. Verification rows follow checklist order. Translation files show the exact dictionary text, including entries the site currently displays in English pending review. Reviewer columns start blank. Move any existing exports before rerunning so review notes are preserved.
 
-When updating user-facing text or maintained scheme content, update the corresponding translations in `client/src/locales/`. The original English, Hindi, and Kannada copies are in `client/src/i18n.jsx`, `client/src/eligibilityContent.js`, and `server/catalog.js`.
+When updating user-facing text or maintained scheme content, update the corresponding translations in `client/src/locales/`. English, Hindi and Kannada interface text lives in `client/src/locales/en.js`, `hi.js` and `kn.js`. Question copy and scheme content also come from `client/src/eligibilityContent.js` and the server catalogue and rule files.
 
 Eligibility results explain whether the answers match the criteria checked by SchemeSathi. Users should confirm current rules with the official programme before applying. The housing check covers PMAY Urban 2.0. PM-JAY coverage for people below 70 requires checking the official beneficiary portal. The pension check covers old-age and widow pensions. The questionnaire directs disability pension applicants to verify applicable rules with their state office.
 
