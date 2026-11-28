@@ -77,9 +77,8 @@ export default function App() {
     <div className="app">
       <a className="skip-link" href="#content">{t('skip')}</a>
       <header className="header">
-        <Link to="/" className="brand">
-          <img className="brand-mark" src="/schemesathi-mark.svg" alt="" width="40" height="40" />
-          {t('appName')}
+        <Link to="/" className="brand" aria-label={t('appName')}>
+          <img src="/schemesathi-logo.jpeg" alt="" width="1280" height="720" />
         </Link>
         <nav className="nav">
           <NavLink to="/schemes">{t('schemes')}</NavLink>
