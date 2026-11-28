@@ -1,6 +1,6 @@
 import { languages } from './locales/index.js';
 import { localizedScheme, stateLabel, translatedScheme } from './schemeText.js';
-import { questionWords, schemeAliases, synonyms } from './searchTerms.js';
+import { guidanceQualifiers, questionWords, schemeAliases, synonyms } from './searchTerms.js';
 
 export function normalizeSearch(text) {
   return String(text ?? '').normalize('NFKC').toLowerCase()
@@ -16,9 +16,9 @@ const groups = synonyms.map(({ terms, schemes }) => ({
 const multiwordSynonyms = groups.flatMap((group) => group.words.filter((term) => term.includes(' ')))
   .sort((a, b) => b.length - a.length);
 
-function oneTypo(a, b) {
+function oneTypo(a, b, minimumLength = 5) {
   if (!/^[a-z]{4,}$/.test(a) || !/^[a-z]{4,}$/.test(b)
-    || Math.max(a.length, b.length) < 5 || Math.abs(a.length - b.length) > 1) return false;
+    || Math.max(a.length, b.length) < minimumLength || Math.abs(a.length - b.length) > 1) return false;
   const [short, long] = a.length <= b.length ? [a, b] : [b, a];
   let index = 0;
   while (index < short.length && short[index] === long[index]) index++;
@@ -62,16 +62,28 @@ export function createSchemeSearch(schemes, lang, t) {
     return { scheme, formalNames, titleTerms, descriptiveTerms };
   });
 
+  const stateNames = [...new Set(schemes.filter((scheme) => scheme.level === 'state').map(({ state }) => state))]
+    .map((state) => ({ state, labels: names([state, stateLabel(state, t)]) }));
+
   function named(query, { allowTypos = true, whole = false } = {}) {
     const text = normalizeSearch(query);
+    const occurrences = rows.flatMap(({ scheme, formalNames }) => formalNames.flatMap((term) => {
+      if (whole) return text === term ? [{ scheme, start: 0, end: term.length }] : [];
+      return [...(' ' + text + ' ').matchAll(new RegExp('(?<= )' + term + '(?= )', 'gu'))]
+        .map(({ index }) => ({ scheme, start: index, end: index + term.length }));
+    }));
+    // Suppress shorter aliases inside a longer name, retaining matches elsewhere in the message.
+    const distinct = occurrences.filter((match) => !occurrences.some((other) =>
+      other.start <= match.start && other.end >= match.end
+      && (other.start < match.start || other.end > match.end)));
+    if (distinct.length) return [...new Set(distinct.map(({ scheme }) => scheme))];
+    if (!allowTypos) return [];
+
     const tokens = words(text);
     let best = 0;
     const found = [];
     for (const { scheme, formalNames } of rows) {
       const rank = formalNames.reduce((score, term) => {
-        if (term === text || (!whole && namedPhrase(text, term))) {
-          return Math.max(score, words(term).length * 10 + (term === text ? 1 : 0));
-        }
         const pattern = words(term);
         if (!allowTypos || pattern.length < 2 || (whole && tokens.length !== pattern.length)) return score;
         const fuzzy = tokens.some((word, i) => {
@@ -79,7 +91,7 @@ export function createSchemeSearch(schemes, lang, t) {
           const errors = pattern.slice(1).flatMap((part, j) => (
             tokens[i + j + 1] === part ? [] : [[tokens[i + j + 1] ?? '', part]]
           ));
-          return errors.length === 1 && oneTypo(...errors[0]);
+          return errors.length === 1 && oneTypo(...errors[0], 4);
         });
         return fuzzy ? Math.max(score, pattern.length * 10 - 1) : score;
       }, 0);
@@ -94,13 +106,34 @@ export function createSchemeSearch(schemes, lang, t) {
   }
 
   function find(query) {
+    const text = normalizeSearch(query);
     if (!String(query).trim()) return schemes;
-    const terms = queryTerms(query);
-    if (!terms.length) return [];
-    const direct = named(query, { whole: true });
-    if (direct.length) return direct;
+    const explicit = stateNames.filter(({ labels }) => labels.some((label) => namedPhrase(text, 'in ' + label)));
+    const regions = explicit.length ? explicit
+      : stateNames.filter(({ labels }) => labels.some((label) => namedPhrase(text, label)));
+    const scoped = (scheme) => !regions.length || scheme.level !== 'state'
+      || regions.some(({ state }) => state === scheme.state);
     const exact = named(query);
+    if (exact.length) return exact.filter(scoped);
+
+    let remaining = ' ' + text + ' ';
+    for (const { labels } of regions) {
+      for (const label of labels) remaining = remaining.replaceAll(' ' + label + ' ', ' ');
+    }
+    const terms = queryTerms(remaining);
+    const ranked = rank(terms, scoped);
+    if (ranked.length || !terms.length) return ranked;
+
+    for (const qualifier of guidanceQualifiers) {
+      remaining = remaining.replaceAll(' ' + qualifier + ' ', ' ');
+    }
+    return rank(queryTerms(remaining), scoped);
+  }
+
+  function rank(terms, scoped) {
+    if (!terms.length) return [];
     const ranked = rows.flatMap((row, index) => {
+      if (!scoped(row.scheme)) return [];
       const scores = terms.map(({ term, group }) => {
         if (group) return group.schemes.has(row.scheme.slug) ? 3 : 0;
         if (row.titleTerms.has(term)) return 5;
@@ -108,7 +141,6 @@ export function createSchemeSearch(schemes, lang, t) {
         if ([...row.titleTerms].some((value) => (term.length >= 3 && value.startsWith(term)) || oneTypo(term, value))) return 1;
         return 0;
       });
-      if (exact.includes(row.scheme)) return [{ ...row, index, score: 1000 + scores.reduce((a, b) => a + b, 0) }];
       if (scores.includes(0)) return [];
       return [{ ...row, index, score: scores.reduce((a, b) => a + b, 0) }];
     });

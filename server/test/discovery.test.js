@@ -79,3 +79,22 @@ test('unanswered chat prompts preserve uncertainty and pass catalogue slugs only
   assert.deepEqual(reply.schemes.map(({ slug }) => slug), ['pm-kisan']);
   assert.deepEqual(helpReply('?!', t, search), { topic: 'fallback' });
 });
+
+test('longer names disambiguate shared aliases without swallowing a separately mentioned scheme', () => {
+  assert.deepEqual(results('pmay'), ['pm-awas-gramin', 'pm-awas-yojana']);
+  assert.deepEqual(results('pmay gramin income limit'), ['pm-awas-gramin']);
+  assert.deepEqual(results('PM Kisan and PM Kisan Maandhan'), ['pm-kisan', 'pm-kisan-maandhan']);
+  assert.deepEqual(results('kisan credit crad'), ['kisan-credit-card']);
+});
+
+test('discovery respects named states and keeps the relevant subgroup when stripping question qualifiers', () => {
+  for (const [query, slugs] of [
+    ['ladki ki padhai ke liye paisa', ['aicte-pragati', 'tn-pudhumai-penn', 'wb-kanyashree']],
+    ['scholarship for girls in Tamil Nadu', ['aicte-pragati', 'tn-pudhumai-penn']],
+    ['pension scheme for retired farmers', ['pm-kisan-maandhan']],
+  ]) assert.deepEqual(results(query), slugs, query);
+  assert.ok(results('farmer schemes in Odisha').includes('odisha-cm-kisan'));
+  assert.ok(!results('farmer schemes in Odisha').includes('wb-krishak-bandhu'));
+  assert.deepEqual(helpReply('Karnataka Shakti in Odisha', t, search), { topic: 'fallback' });
+  assert.deepEqual(results('tractor chahiye kisan ko'), []);
+});

@@ -32,8 +32,8 @@ export function helpReply(question, t, search) {
   }
 
   const schemes = search.named(query, { allowTypos: false });
-  if (schemes.length) return { schemes, named: true };
   const matches = query ? search.find(query) : [];
+  if (schemes.length && matches.length) return { schemes: matches, named: true };
   if (matches.length) return {
     schemes: matches.slice(0, 4),
     suggested: matches.map(({ slug }) => slug),

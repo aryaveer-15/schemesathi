@@ -4,7 +4,7 @@ import { api } from '../api';
 import { schemeQuestions } from '../eligibilityContent';
 import { helpReply, helpTopics, unknownAnswer } from '../helpTopics';
 import { getText } from '../locales';
-import { localizedScheme, schemePath } from '../schemeText';
+import { localizedScheme, schemePath, stateLabel } from '../schemeText';
 import { createSchemeSearch } from '../schemeSearch';
 import TranslationNotice from '../TranslationNotice';
 import { useAuth } from '../useAuth';
@@ -152,9 +152,11 @@ function TopicReply({ topic }) {
 function SchemeReply({ scheme }) {
   const { lang, t } = useLang();
   const title = localizedScheme(scheme, 'title', lang);
+  const region = scheme.state || (scheme.level === 'central' ? 'All India' : '');
   return (
     <section>
       <h2>{title}</h2>
+      {region && <p>{stateLabel(region, t)}</p>}
       <ul>
         {Object.hasOwn(schemeQuestions, scheme.slug) && (
           <li><Link to={`/eligibility?scheme=${encodeURIComponent(scheme.slug)}`}>{t('eligibility')}</Link></li>

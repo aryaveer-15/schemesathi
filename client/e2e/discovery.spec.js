@@ -106,3 +106,32 @@ test('chat links unanswered questions to catalogue-only search results', async (
   await page.reload();
   await expect(page.locator('.scheme-card')).toHaveCount(1);
 });
+
+test('chat distinguishes related schemes and never gives personal eligibility or benefit verdicts', async ({ page }) => {
+  await page.route('**/api/schemes', (route) => route.fulfill({ json: catalog }));
+  const loaded = page.waitForResponse('**/api/schemes');
+  await page.goto('/scheme-chat');
+  await loaded;
+  for (const [question, slugs] of [
+    ['Am I eligible for PM Kisan if I have 3 acres?', ['pm-kisan']],
+    ['How much does PM Kisan pay?', ['pm-kisan']],
+    ['What is the age limit for Atal Pension Yojana?', ['atal-pension-yojana']],
+    ['What is the income limit and deadline for PMAY?', ['pm-awas-gramin', 'pm-awas-yojana']],
+    ['Do I qualify for Kanyashree?', ['wb-kanyashree']],
+  ]) {
+    await page.locator('textarea').fill(question);
+    await page.locator('form button[type=submit]').click();
+    const reply = page.locator('.chat-message-answer').last();
+    await expect(reply).toContainText('The responsible authority makes the final decision.');
+    await expect(reply).not.toContainText(/\b(?:you (?:are|qualify|will|can|meet)|you['’]re|the applicant (?:is|qualifies|will|can|meets))\b[^.!?]*\b(?:eligible|qualif(?:y|ies)|receive|criteria|approved)\b/i);
+    await expect(reply).not.toContainText(/\byou qualify\b|\bthe applicant qualifies\b/i);
+    await expect(reply).not.toContainText('3 acres');
+    await expect(reply.locator('section')).toHaveCount(slugs.length);
+    for (const slug of slugs) {
+      const scheme = catalog.find((entry) => entry.slug === slug);
+      const listing = reply.locator('section').filter({ has: page.locator('a[href="/schemes/' + slug + '"]') });
+      await expect(listing.getByRole('link', { name: 'Visit the official scheme website' })).toHaveAttribute('href', scheme.sourceUrl);
+      if (scheme.state) await expect(listing).toContainText(scheme.state);
+    }
+  }
+});
