@@ -66,7 +66,7 @@ test('export writes all BOM-encoded files with 51 schemes and complete original 
   assert.equal(await exportReviews({ output, report }), 13);
   assert.equal((await readdir(output)).length, 13);
   const sheet = async (file) => readCsv(await readFile(join(output, file)));
-  const [, ...verification] = await sheet('verification.csv');
+  const [verificationHeader, ...verification] = await sheet('verification.csv');
   const [, ...banners] = await sheet('banners.csv');
   assert.equal(verification.length, 51);
   assert.equal(banners.length, 51);
@@ -74,8 +74,10 @@ test('export writes all BOM-encoded files with 51 schemes and complete original 
   const titles = [...checklist({ entries: {} }).matchAll(/^- Scheme ID · ([a-z0-9-]+)$/gm)].map(([, slug]) => bySlug.get(slug));
   assert.deepEqual(verification.map((row) => row[1]), titles);
   assert.deepEqual(banners.map((row) => row[0]).sort(), titles.slice().sort());
-  assert.ok(verification.every((row, index) => row.length === 10 && row[0] === String(index + 1)
-    && row.slice(5).every((cell) => cell === '')));
+  assert.equal(verificationHeader.at(-1), 'Snapshot');
+  const fingerprints = new Map(inventory.map(({ scheme, fingerprint }) => [scheme.title.en, fingerprint]));
+  assert.ok(verification.every((row, index) => row.length === 11 && row[0] === String(index + 1)
+    && row.slice(5, 10).every((cell) => cell === '') && row[10] === fingerprints.get(row[1])));
   assert.ok(banners.every((row) => row.length === 7 && row[1].endsWith('.webp') && row[2] && row.slice(3).every((cell) => cell === '')));
   const housing = verification.find((row) => row[1] === bySlug.get('pm-awas-yojana'));
   assert.ok(housing[4].includes(dictionaries.en.housingIncome));

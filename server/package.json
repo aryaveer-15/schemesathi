@@ -12,6 +12,7 @@
     "check:links": "node scripts/checkSchemeLinks.js",
     "verify:checklist": "node scripts/verificationChecklist.js",
     "verify:record": "node scripts/recordVerification.js",
+    "verify:import": "node scripts/importVerification.js",
     "export:reviews": "node scripts/exportReviews.js"
   },
   "keywords": [],

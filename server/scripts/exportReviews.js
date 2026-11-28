@@ -24,9 +24,9 @@ function verificationRows() {
   if (order.length !== bySlug.size) throw new Error('Could not read all scheme IDs from the verification checklist.');
   return [
     ['Order', 'Scheme', 'State or central', 'Official link', 'Our value (age, income, amount, deadline)',
-      'Official value', 'Matches', 'Notes', 'Checked by', 'Date'],
+      'Official value', 'Matches', 'Notes', 'Checked by', 'Date', 'Snapshot'],
     ...order.map(([, slug], index) => {
-      const { scheme, criteria, copy, profileInferences } = bySlug.get(slug);
+      const { scheme, criteria, copy, profileInferences, fingerprint } = bySlug.get(slug);
       const values = [
         ...copy.filter(([, value]) => reviewText(value)).map(([, value]) => value),
         ...criteria.filter(({ values }) => Number.isFinite(values.min) || Number.isFinite(values.max))
@@ -36,7 +36,7 @@ function verificationRows() {
         ...(scheme.deadline === undefined ? [] : [String(scheme.deadline)]),
       ];
       return [index + 1, scheme.title.en, scheme.level === 'state' ? scheme.state : 'Central',
-        scheme.sourceUrl, [...new Set(values)].join('\n'), '', '', '', '', ''];
+        scheme.sourceUrl, [...new Set(values)].join('\n'), '', '', '', '', '', fingerprint];
     }),
   ];
 }

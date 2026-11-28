@@ -129,22 +129,21 @@ npm.cmd --prefix server run check:links
 npm.cmd --prefix server run export:reviews
 ```
 
-3. For a returned sheet, download the relevant tab with **File → Download → Comma-separated values (.csv)**. The repository has no review-CSV importer. Use the sheet to read the reviewer’s decisions and record them one at a time with the existing command. Match each row to its scheme ID and reviewed snapshot in the checklist. Use the reviewer’s actual date and initials. If an exported row lacks a snapshot, compare it with the fresh checklist and confirm what the reviewer saw before recording it.
+### Import a completed verification sheet
+
+Download the verification tab through **File → Download → Comma-separated values (.csv)**. Keep the exported headers, use initials in **Checked by**, and export **Date** as YYYY-MM-DD. A yes needs an **Official value**. A no or unclear can include a correction in **Official value** and supporting text in **Notes**. The importer records those in the ledger and keeps published scheme facts separate.
+
+From the repo root, preview the whole file or a friend's batch. Sheet row 1 is the header. Replace the sample selection with that friend's row numbers. Check the counts, rejected rows and ledger diff before running with `--apply` using the same file and selection.
 
 ```powershell
-$schemeId = Read-Host 'Scheme ID from the checklist'
-$reviewDate = Read-Host 'Review date (YYYY-MM-DD)'
-$reviewer = Read-Host 'Reviewer initials'
-$decision = Read-Host 'yes, no or unclear'
-$snapshot = Read-Host 'Snapshot ID of the reviewed data'
-$reviewArgs = @('--scheme', $schemeId, '--date', $reviewDate, '--by', $reviewer, '--matches', $decision, '--snapshot', $snapshot)
-npm.cmd --prefix server run verify:record -- @reviewArgs
-# Read the preview before saving.
-npm.cmd --prefix server run verify:record -- @reviewArgs --apply
+$sheet = Read-Host 'Path to the downloaded verification CSV'
+npm.cmd --prefix server run verify:import -- --file $sheet
+npm.cmd --prefix server run verify:import -- --file $sheet --only-rows '2,4-6'
+npm.cmd --prefix server run verify:import -- --file $sheet --only-rows '2,4-6' --apply
 git diff -- server/verificationRecords.json
 ```
 
-For a correction proposed on a `no` or `unclear` row, add `--field` and `--value` to the command. The proposal goes to the ledger for review. For links, banners and translations, keep returned feedback in the review files or sheet until it is checked and applied to the relevant source file.
+Keep a copy of old exports and duplicate any completed Google Sheet tab before changing it. Move the old export files out of `exports/` and re-export into the empty folder, then import the new verification CSV as a separate tab. Join by the exact **Scheme** name, never by row position. You can also add **Snapshot** as the last column of the duplicated tab by hand. Copy a fingerprint from the new export or checklist only after the reviewer confirms that the decision still applies to the current snapshot. If the old review cannot be tied to the current evidence, ask the reviewer to recheck it. Keep the original **Official value**, **Matches**, **Notes**, **Checked by**, and **Date** in your backup.
 
 **Last verified** is the date a human recorded a **yes** for the current scheme snapshot. A **no**, **unclear**, changed snapshot or missing review is pending. Restart or redeploy after saving a review for the public page to pick up the new ledger.
 
@@ -200,4 +199,3 @@ Invoke-RestMethod 'https://schemesathi-qx5e.onrender.com/api/health'
 - `client/README.md` still contains the Vite starter template.
 - `server/.env.example` describes the public origin as preview-only and shows an HTTPS example for separate frontend CORS. The app also uses the canonical origin for write protection, and the separate-origin cookie workflow is for local development.
 - The seed script hardcodes public DNS resolvers. The server and catalogue importer support `MONGO_DNS_SERVERS`, which can make DNS troubleshooting differ across commands.
-- The review exporter is present. Returned review CSVs still need the manual ledger workflow above.

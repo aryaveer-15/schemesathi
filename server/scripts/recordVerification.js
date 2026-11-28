@@ -41,18 +41,14 @@ function proposedRecords(records, values, today = new Date().toISOString().slice
   return { ...records, [values.scheme]: { ...previous, review } };
 }
 
-function record(options, { path = file, output = console.log, today } = {}) {
+function updateLedger(apply, update, path = file) {
   const lock = path + '.lock';
   const temp = path + '.' + process.pid + '.tmp';
-  const handle = options.apply ? fs.openSync(lock, 'wx') : null;
+  const handle = apply ? fs.openSync(lock, 'wx') : null;
   try {
     const before = readRecords(path);
-    const after = proposedRecords(before, options, today);
-    const block = (data) => JSON.stringify({ [options.scheme]: data[options.scheme] ?? null }, null, 2).split('\n');
-    const diff = ['--- current verification record', '+++ proposed verification record',
-      ...block(before).map((line) => '-' + line), ...block(after).map((line) => '+' + line)].join('\n');
-    output(diff);
-    if (options.apply) {
+    const after = update(before);
+    if (apply && after !== before) {
       const sorted = Object.fromEntries(Object.entries(after).sort(([a], [b]) => a.localeCompare(b)));
       fs.writeFileSync(temp, JSON.stringify(sorted, null, 2) + '\n', { flag: 'wx' });
       fs.renameSync(temp, path);
@@ -65,6 +61,17 @@ function record(options, { path = file, output = console.log, today } = {}) {
       fs.unlinkSync(lock);
     }
   }
+}
+
+function record(options, { path, output = console.log, today } = {}) {
+  return updateLedger(options.apply, (before) => {
+    const after = proposedRecords(before, options, today);
+    const block = (data) => JSON.stringify({ [options.scheme]: data[options.scheme] ?? null }, null, 2).split('\n');
+    const diff = ['--- current verification record', '+++ proposed verification record',
+      ...block(before).map((line) => '-' + line), ...block(after).map((line) => '+' + line)].join('\n');
+    output(diff);
+    return after;
+  }, path);
 }
 
 if (require.main === module) {
@@ -81,4 +88,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { proposedRecords, record };
+module.exports = { proposedRecords, record, updateLedger };
