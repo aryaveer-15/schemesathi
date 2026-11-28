@@ -1,4 +1,6 @@
 const dns = require('dns');
+// Keep the public resolvers for mongodb+srv seed runs on networks whose
+// default DNS cannot resolve MongoDB SRV or TXT records.
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 require('dotenv').config();
 const mongoose = require('mongoose');

@@ -214,6 +214,4 @@ Invoke-RestMethod 'https://schemesathi-qx5e.onrender.com/api/health'
 
 ## Repository notes for later
 
-- `client/README.md` still contains the Vite starter template.
-- `server/.env.example` describes the public origin as preview-only and shows an HTTPS example for separate frontend CORS. The app also uses the canonical origin for write protection, and the separate-origin cookie workflow is for local development.
-- The seed script hardcodes public DNS resolvers. The server and catalogue importer support `MONGO_DNS_SERVERS`, which can make DNS troubleshooting differ across commands.
+- The seed uses fixed public DNS resolvers for MongoDB SRV and TXT lookups. The API and catalogue importer support `MONGO_DNS_SERVERS`, so DNS troubleshooting can differ across commands.
