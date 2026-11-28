@@ -6,9 +6,9 @@ import { localizedScheme, schemePath, stateLabel } from '../schemeText';
 import { createSchemeSearch } from '../schemeSearch';
 import { schemeQuestions } from '../eligibilityContent';
 import SchemeBanner from '../SchemeBanner';
+import ReviewText from '../ReviewText';
 import TranslationNotice from '../TranslationNotice';
 import LoadingState from '../LoadingState';
-import { getText } from '../locales';
 
 const pageSize = 24;
 
@@ -170,8 +170,8 @@ export default function Schemes() {
                 <h2><Link to={schemePath(scheme)}>
                   {localizedScheme(scheme, 'title', lang)} <span className="direction-arrow" aria-hidden="true">→</span>
                 </Link></h2>
-                <p lang="en" dir="ltr">{localizedScheme(scheme, 'summary', lang)}</p>
-                {scheme.eligibilityMode === 'public' && <p className="muted" lang="en" dir="ltr">{getText('en', 'publicSchemeAccess')}</p>}
+                <ReviewText as="p" reviewKey={'summary.' + scheme.slug} source={localizedScheme(scheme, 'summary', 'en')} />
+                {scheme.eligibilityMode === 'public' && <ReviewText as="p" className="muted" reviewKey="publicSchemeAccess" />}
                 {!scheme.eligibilityMode && !Object.hasOwn(schemeQuestions, scheme.slug) && (
                   <p className="muted catalog-coverage">{t('officialCheck')}</p>
                 )}
@@ -186,7 +186,7 @@ export default function Schemes() {
           onClick={() => setShown({ key: filterKey, count: visibleCount + pageSize })}>{t('moreSchemes')}</button></p>
       )}
 
-      <p className="disclaimer" lang="en" dir="ltr">{getText('en', 'disclaimer')}</p>
+      <ReviewText as="p" className="disclaimer" reviewKey="disclaimer" />
     </main>
   );
 }

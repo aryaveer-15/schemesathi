@@ -3,6 +3,7 @@ WORKDIR /app/client
 COPY client/package*.json ./
 RUN npm ci
 COPY client/ ./
+COPY server/translationApprovals.json /app/server/translationApprovals.json
 RUN npm run build
 
 FROM node:24-bookworm-slim

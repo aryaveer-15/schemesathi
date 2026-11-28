@@ -13,7 +13,9 @@
     "verify:checklist": "node scripts/verificationChecklist.js",
     "verify:record": "node scripts/recordVerification.js",
     "verify:import": "node scripts/importVerification.js",
-    "export:reviews": "node scripts/exportReviews.js"
+    "export:reviews": "node scripts/exportReviews.js",
+    "translations:export": "node scripts/reviewTranslations.js export",
+    "translations:import": "node scripts/reviewTranslations.js import"
   },
   "keywords": [],
   "author": "",

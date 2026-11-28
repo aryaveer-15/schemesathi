@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { eligibilityText, schemeScope } from './eligibilityContent';
-import { entryTitle, matcherInputs, questionLabel, remainingQuestions, replayAnswers } from './questionnaire';
+import { eligibilityText, schemeScopeKey } from './eligibilityContent';
+import { entryTitle, matcherInputs, questionLabel, questionReviewKey, remainingQuestions, replayAnswers } from './questionnaire';
 import { schemeQuestionSources } from './schemeQuestionSources';
 import EligibilityResults from './EligibilityResults';
+import ReviewText from './ReviewText';
 import TranslationNotice from './TranslationNotice';
 import { useLang } from './useLang';
 
@@ -88,7 +89,7 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
   if (!current) return null;
 
   const question = questionLabel(current.entry, current.key);
-  const scope = schemeScope(current.entry.slug);
+  const scope = schemeScopeKey(current.entry.slug);
   const total = index + pending.length;
   const last = pending.length === 1;
   const progress = t('questionProgress').replace('{current}', number(index + 1)).replace('{total}', number(total));
@@ -102,8 +103,9 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
       <progress aria-labelledby="question-progress" max={total} value={index + 1} />
       <p className="wizard-context">{isShared ? t('profileDetails') : entryTitle(current.entry, lang)}</p>
       <TranslationNotice />
-      <h2 ref={heading} tabIndex={-1} id="question-heading" lang="en" dir="ltr" aria-describedby="question-progress">{question}</h2>
-      {scope && <p className="status" lang="en" dir="ltr">{scope}</p>}
+      <ReviewText as="h2" ref={heading} tabIndex={-1} id="question-heading" aria-describedby="question-progress"
+        reviewKey={questionReviewKey(current.entry, current.key)} source={question} />
+      {scope && <ReviewText as="p" className="status" reviewKey={scope} />}
       {!isShared && sourceUrl && (
         <p><a href={sourceUrl} target="_blank" rel="noreferrer">{local('official')}</a></p>
       )}
@@ -133,7 +135,7 @@ export default function EligibilityQuestionnaire({ entries, requestedScheme, onC
           </select>
         )}
         {invalid && <p className="alert" role="alert" id="question-error">
-          {isNumber ? <span lang="en" dir="ltr">{eligibilityText('en', 'ageRequired')}</span> : local('answerRequired')}
+          {isNumber ? <ReviewText reviewKey="ageRequired" /> : local('answerRequired')}
         </p>}
         {failed && <p className="alert" ref={submitError} tabIndex={-1}>{single ? local('failed') : t('matchFailed')}</p>}
         <div className="wizard-actions">

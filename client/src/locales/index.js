@@ -1,3 +1,5 @@
+import { criticalKeys } from './criticalKeys.js';
+import { approvedText, hasApproval } from './reviewedText.js';
 import en from './en.js';
 import hi from './hi.js';
 import kn from './kn.js';
@@ -27,7 +29,9 @@ export const languages = [
   { code: 'ml', label: 'മലയാളം' },
 ];
 
-export function getText(lang, key) {
+export function getText(lang, key, approvals) {
   const dictionary = Object.hasOwn(dictionaries, lang) ? dictionaries[lang] : en;
-  return Object.hasOwn(dictionary, key) ? dictionary[key] : dictionary.labelUnavailable;
+  if (!Object.hasOwn(en, key)) return dictionary.labelUnavailable;
+  return approvedText(lang, key, en[key], approvals)
+    ?? (criticalKeys.has(key) || hasApproval(lang, key, approvals) ? en[key] : dictionary[key]);
 }

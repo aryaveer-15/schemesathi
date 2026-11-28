@@ -1,8 +1,12 @@
 const { readFileSync } = require('node:fs');
 const { resolve } = require('node:path');
 const { parseArgs } = require('node:util');
+const { parseSheet } = require('./reviewCsv');
 const { inventory } = require('../verificationInventory');
-const { proposedRecords, updateLedger } = require('./recordVerification');
+const { proposedRecords } = require('./recordVerification');
+const ledgerDiff = require('./ledgerDiff');
+const updateLedger = require('./updateLedger');
+const defaultLedger = resolve(__dirname, '../verificationRecords.json');
 
 const schemes = new Map();
 for (const entry of inventory) {
@@ -10,27 +14,6 @@ for (const entry of inventory) {
   const entries = schemes.get(title) ?? [];
   entries.push(entry);
   schemes.set(title, entries);
-}
-
-function parseSheet(text) {
-  const input = text.replace(/^\uFEFF/, '');
-  const cells = /(?:"((?:[^"]|"")*)"|([^",\r\n]*))(,|\r\n|\n|\r|$)/gy;
-  const rows = [];
-  let row = [];
-  let end = 0;
-  while (end < input.length) {
-    const cell = cells.exec(input);
-    if (!cell) throw new Error('Invalid CSV quoting in sheet row ' + (rows.length + 1) + '.');
-    end = cells.lastIndex;
-    row.push(cell[1] === undefined ? cell[2] : cell[1].replaceAll('""', '"'));
-    if (cell[3] === ',') {
-      if (end === input.length) rows.push([...row, '']);
-    } else {
-      rows.push(row);
-      row = [];
-    }
-  }
-  return rows;
 }
 
 function selectedRows(selection, lastRow) {
@@ -87,27 +70,7 @@ function reviewOptions({ get, validWidth }) {
   return { scheme: scheme.slug, snapshot, matches, by, date, notes: get('Notes'), ...correction };
 }
 
-function ledgerDiff(before, after) {
-  if (JSON.stringify(before) === JSON.stringify(after)) return 'No ledger changes.';
-  const lines = (data) => JSON.stringify(data, null, 2).split('\n');
-  const oldLines = lines(before);
-  const newLines = lines(after);
-  let start = 0;
-  while (oldLines[start] === newLines[start] && start < oldLines.length) start++;
-  let oldEnd = oldLines.length;
-  let newEnd = newLines.length;
-  while (oldEnd > start && newEnd > start && oldLines[oldEnd - 1] === newLines[newEnd - 1]) {
-    oldEnd--;
-    newEnd--;
-  }
-  return ['--- current server/verificationRecords.json', '+++ proposed server/verificationRecords.json',
-    '@@ -' + (start + 1) + ',' + (oldEnd - start) + ' +' + (start + 1) + ',' + (newEnd - start) + ' @@',
-    ...oldLines.slice(start, oldEnd).map((line) => '-' + line),
-    ...newLines.slice(start, newEnd).map((line) => '+' + line),
-  ].join('\n');
-}
-
-function importVerification({ file, onlyRows, apply }, { path, output = console.log, today } = {}) {
+function importVerification({ file, onlyRows, apply }, { path = defaultLedger, output = console.log, today } = {}) {
   if (!file) throw new Error('Provide the returned CSV path with --file.');
   const text = new TextDecoder('utf-8', { fatal: true }).decode(readFileSync(file));
   const rows = reviewRows(text, onlyRows);
@@ -139,7 +102,7 @@ function importVerification({ file, onlyRows, apply }, { path, output = console.
     output(['| Yes | No | Unclear | Rejected |', '| ---: | ---: | ---: | ---: |',
       '| ' + Object.values(counts).join(' | ') + ' |'].join('\n'));
     for (const message of rejected) output(message);
-    output(ledgerDiff(before, after));
+    output(ledgerDiff(before, after, 'server/verificationRecords.json'));
     return after;
   }, path);
   return counts;

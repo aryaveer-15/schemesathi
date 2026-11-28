@@ -55,7 +55,9 @@ export function schemeTitle(lang, slug) {
   return translatedScheme(slug, lang) ?? title[languageIndex[lang]] ?? title[0];
 }
 
+export const schemeScopeKey = (slug) => scopeKeys[slug];
+
 export function schemeScope(slug) {
-  const key = scopeKeys[slug];
+  const key = schemeScopeKey(slug);
   return key ? getText('en', key) : '';
 }

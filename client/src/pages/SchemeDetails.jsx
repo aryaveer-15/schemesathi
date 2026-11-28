@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import ApplicationDirections from '../ApplicationDirections';
 import SchemeBanner from '../SchemeBanner';
+import ReviewText from '../ReviewText';
 import TranslationNotice from '../TranslationNotice';
 import LoadingState from '../LoadingState';
 import { schemeQuestions } from '../eligibilityContent';
@@ -106,7 +107,7 @@ function SchemeDetailsContent({ id }) {
               </p>
               <h1>{localizedScheme(scheme, 'title', lang)}</h1>
               <TranslationNotice />
-              <p lang="en" dir="ltr">{localizedScheme(scheme, 'summary', lang)}</p>
+              <ReviewText as="p" reviewKey={'summary.' + scheme.slug} source={localizedScheme(scheme, 'summary', 'en')} />
               <p className="scheme-verification">
                 {t('lastVerified')}{' · '}
                 {verifiedDate
@@ -121,14 +122,14 @@ function SchemeDetailsContent({ id }) {
           <div className="scheme-body">
             {(verificationMessage || scheme.eligibilityRequirements?.length > 0) && (
               <div className="scheme-criteria">
-                {verificationMessage && <p className="verification-note" lang="en" dir="ltr">
-                  <strong>{getText('en', verificationMessage)}</strong>
+                {verificationMessage && <p className="verification-note">
+                  <ReviewText as="strong" reviewKey={verificationMessage} />
                 </p>}
                 {scheme.eligibilityRequirements?.length > 0 && (
                   <section aria-labelledby="scheme-requirements">
                     <h2 id="scheme-requirements">{t('eligibilityRequirements')}</h2>
                     <ul lang="en" dir="ltr">{scheme.eligibilityRequirements.map((requirement, index) => (
-                      <li key={index}>{requirement.en}</li>
+                      <li key={index}><ReviewText reviewKey={'criterion.' + scheme.slug + '.' + index} source={requirement.en} /></li>
                     ))}</ul>
                     {/^https:\/\//i.test(scheme.eligibilitySourceUrl ?? '') && (
                       <p><a href={scheme.eligibilitySourceUrl} target="_blank" rel="noreferrer">{t('eligibilitySource')}</a></p>
@@ -140,8 +141,8 @@ function SchemeDetailsContent({ id }) {
             <div className="scheme-next">
               {hasForm && <p><Link className="primary-action" to={`/eligibility?scheme=${encodeURIComponent(scheme.slug)}`}>{t('eligibility')}</Link></p>}
               {hasProfile && <p><Link className="primary-action" to={`/my-schemes?scheme=${encodeURIComponent(scheme.slug)}`}>{t('findSchemes')}</Link></p>}
-              {publicAccess && <p lang="en" dir="ltr">{getText('en', 'publicSchemeAccess')}</p>}
-              <ApplicationDirections application={scheme.application} />
+              {publicAccess && <ReviewText as="p" reviewKey="publicSchemeAccess" />}
+              <ApplicationDirections application={scheme.application} slug={scheme.slug} />
               {/^(https?:\/\/)/i.test(scheme.sourceUrl ?? '') && (
                 <p><a href={scheme.sourceUrl} target="_blank" rel="noreferrer">
                   {t(hasForm || hasProfile || publicAccess ? 'officialScheme' : 'officialCheck')}
@@ -149,7 +150,7 @@ function SchemeDetailsContent({ id }) {
               )}
             </div>
           </div>
-          <p className="disclaimer" lang="en" dir="ltr">{getText('en', 'disclaimer')}</p>
+          <ReviewText as="p" className="disclaimer" reviewKey="disclaimer" />
         </article>
       )}
     </main>

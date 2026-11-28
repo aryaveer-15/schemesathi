@@ -13,8 +13,12 @@ export function entryTitle(entry, lang) {
   return entry.title ? localizedScheme(entry, 'title', lang) : schemeTitle(lang, entry.slug);
 }
 
+export function questionReviewKey(entry, key) {
+  return entry.criteria?.[key]?.question ? 'question.' + entry.slug + '.' + key : profileLabels[key] ?? key;
+}
+
 export function questionLabel(entry, key, suppliedText) {
-  return suppliedText ?? entry.criteria?.[key]?.question ?? getText('en', profileLabels[key] ?? key);
+  return suppliedText ?? entry.criteria?.[key]?.question ?? getText('en', questionReviewKey(entry, key));
 }
 
 export function matcherInputs(records) {

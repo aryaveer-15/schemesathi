@@ -3,9 +3,11 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { schemeQuestions } from '../eligibilityContent';
 import { helpReply, helpTopics, unknownAnswer } from '../helpTopics';
+import { approvedText } from '../locales/reviewedText';
 import { getText } from '../locales';
 import { localizedScheme, schemePath, stateLabel } from '../schemeText';
 import { createSchemeSearch } from '../schemeSearch';
+import ReviewText from '../ReviewText';
 import TranslationNotice from '../TranslationNotice';
 import { useAuth } from '../useAuth';
 import { useLang } from '../useLang';
@@ -30,7 +32,7 @@ function ChatPanel({ initialTopic }) {
   const [announcedReply, setAnnouncedReply] = useState(null);
   const announcementKey = helpTopics[announcedReply?.topic]?.text;
   const announcementLang = announcedReply?.schemes || announcedReply?.topic === 'fallback'
-    || announcementKey === 'helpApplyAnswer' ? 'en' : lang;
+    || (announcementKey === 'helpApplyAnswer' && !approvedText(lang, announcementKey, getText('en', announcementKey))) ? 'en' : lang;
   const announcement = announcedReply?.schemes
     ? [announcedReply.unsure ? unknownAnswer : '', ...announcedReply.schemes
       .map((scheme) => localizedScheme(scheme, 'title', 'en'))].filter(Boolean).join(' ')
@@ -85,7 +87,7 @@ function ChatPanel({ initialTopic }) {
                     suggested: reply.suggested.join(','),
                   })}>{t('browse')}</Link></p>}
                   <TranslationNotice />
-                  <p lang="en" dir="ltr">{getText('en', 'disclaimer')}</p>
+                  <ReviewText as="p" reviewKey="disclaimer" />
                 </>
               ) : <TopicReply topic={reply.topic} />}
             </article>
@@ -129,7 +131,7 @@ function TopicReply({ topic }) {
     <>
       <TranslationNotice />
       <p lang="en" dir="ltr">{unknownAnswer}</p>
-      <p lang="en" dir="ltr">{getText('en', 'disclaimer')}</p>
+      <ReviewText as="p" reviewKey="disclaimer" />
       <p><Link to="/schemes">{t('browse')}</Link></p>
     </>
   );
@@ -139,7 +141,7 @@ function TopicReply({ topic }) {
       {reply.text === 'helpApplyAnswer' ? (
         <>
           <TranslationNotice />
-          <p lang="en" dir="ltr">{getText('en', reply.text)}</p>
+          <ReviewText as="p" reviewKey={reply.text} />
         </>
       ) : <p>{t(reply.text)}</p>}
       {reply.links.length > 0 && <ul>{reply.links.map(([path, key]) => (

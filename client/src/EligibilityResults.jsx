@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ApplicationDirections from './ApplicationDirections';
-import { eligibilityText, schemeScope } from './eligibilityContent';
+import { eligibilityText, schemeScopeKey } from './eligibilityContent';
 import { effectiveInputs } from './eligibilityMatcher.mjs';
-import { entryTitle, matcherInputs, questionLabel } from './questionnaire';
+import { entryTitle, matcherInputs, questionLabel, questionReviewKey } from './questionnaire';
 import { useLang } from './useLang';
+import ReviewText from './ReviewText';
 import TranslationNotice from './TranslationNotice';
 
 const buckets = [
@@ -15,23 +16,26 @@ function officialLink(value) {
   return /^https:\/\//i.test(value ?? '') ? value : null;
 }
 
-const english = (key) => eligibilityText('en', key);
-
 function reasonsFor(entry, result, values) {
   return result.checks.filter(({ status }) => status !== 'matched').map(({ key, status, question }) => {
     const rule = entry.criteria?.[key];
     let reason;
-    if (values[key] === 'unknown') reason = english('uncertainReason');
-    else if (status === 'unanswered') reason = english('missingReason');
-    else if (status === 'review') reason = english('authorityReviewReason');
+    let range;
+    let substitutions;
+    if (values[key] === 'unknown') reason = 'uncertainReason';
+    else if (status === 'unanswered') reason = 'missingReason';
+    else if (status === 'review') reason = 'authorityReviewReason';
     else if (typeof rule === 'string' || rule?.equals) {
-      reason = english('expectedAnswer').replace('{answer}', english(rule?.equals ?? rule));
-    } else if (rule?.min !== undefined) {
-      const range = rule.max === undefined ? english('ageAtLeast').replace('{min}', rule.min)
-        : english('ageRange').replace('{min}', rule.min).replace('{max}', rule.max);
-      reason = `${english('unmetReason')} ${range}`;
-    } else reason = english('unmetReason');
-    return { key, reason, question: questionLabel(entry, key, question) };
+      reason = 'expectedAnswer';
+      substitutions = { answer: eligibilityText('en', rule?.equals ?? rule) };
+    } else {
+      reason = 'unmetReason';
+      if (rule?.min !== undefined) {
+        range = rule.max === undefined ? 'ageAtLeast' : 'ageRange';
+        substitutions = { min: rule.min, max: rule.max };
+      }
+    }
+    return { key, reason, range, substitutions, question: questionLabel(entry, key, question) };
   });
 }
 
@@ -67,7 +71,7 @@ export default function EligibilityResults({ data, entries, onEdit, heading, sin
     <section className="eligibility-result" aria-labelledby="eligibility-results-heading">
       <h2 id="eligibility-results-heading" ref={heading} tabIndex={-1}>{t('eligibilityResults')}</h2>
       <TranslationNotice />
-      <p lang="en" dir="ltr">{english('preliminaryResultNotice')}</p>
+      <ReviewText as="p" reviewKey="preliminaryResultNotice" />
       <div className="wizard-actions result-controls">
         <button type="button" className="primary-action" onClick={onEdit}>{t('editAnswers')}</button>
         <button type="button" className="secondary-action" onClick={() => window.print()}>{t('printResults')}</button>
@@ -88,41 +92,47 @@ export default function EligibilityResults({ data, entries, onEdit, heading, sin
         if (!group.length) return null;
         return (
           <section className="match-results-group" data-result={bucket} key={bucket}>
-            <h3 lang="en" dir="ltr">{english(label)}</h3>
+            <ReviewText as="h3" reviewKey={label} />
             {group.map((result) => {
               const { entry, source, title, values, nextSteps, verification, documents } = result;
               const reasons = reasonsFor(entry, result, values);
-              const scope = schemeScope(entry.slug);
+              const scope = schemeScopeKey(entry.slug);
               const note = { list: 'verifyOfficialList', local: 'verifyLocally', 'list-and-local': 'verifyListAndLocally' }[entry.verificationKind];
               return (
                 <article className="match-result-card" key={entry.slug}>
                   <h4>{title}</h4>
-                  {scope && <p lang="en" dir="ltr">{scope}</p>}
-                  {bucket === 'public' && <p lang="en" dir="ltr">{english('publicSchemeAccess')}</p>}
+                  {scope && <ReviewText as="p" reviewKey={scope} />}
+                  {bucket === 'public' && <ReviewText as="p" reviewKey="publicSchemeAccess" />}
                   {reasons.length > 0 && (
                     <details open={(single || reasons.some(({ key }) => values[key] === 'unknown')) || undefined}
                       className="result-reasons">
                       <summary>{t('resultReasons')}</summary>
-                      <ul lang="en" dir="ltr">{reasons.map(({ key, question, reason }) => (
-                        <li key={key}><strong>{reason}</strong> {question}</li>
+                      <ul lang="en" dir="ltr">{reasons.map(({ key, question, reason, range, substitutions }) => (
+                        <li key={key}>
+                          <ReviewText as="strong" reviewKey={reason} values={substitutions} />{' '}
+                          {range && <><ReviewText as="strong" reviewKey={range} values={substitutions} />{' '}</>}
+                          <ReviewText reviewKey={questionReviewKey(entry, key)} source={question} />
+                        </li>
                       ))}</ul>
                       {entry.slug === 'sukanya-samriddhi-yojana' && values.familyAccounts === 'yes' && (
-                        <p lang="en" dir="ltr">{english('familyException')}</p>
+                        <ReviewText as="p" reviewKey="familyException" />
                       )}
                     </details>
                   )}
-                  {note && <p lang="en" dir="ltr">{english(note)}</p>}
-                  {verification && <p lang="en" dir="ltr">{verification}</p>}
-                  <ApplicationDirections application={nextSteps} />
+                  {note && <ReviewText as="p" reviewKey={note} />}
+                  {verification && <ReviewText as="p" reviewKey={'application.' + entry.slug + '.verification'} source={verification} />}
+                  <ApplicationDirections application={nextSteps} slug={entry.slug} result />
                   {(bucket === 'matched' || bucket === 'review') && (
                     documents ? (
                       <details open={single || undefined} className="result-documents">
                         <summary>{t('documentChecklist')}</summary>
-                        {documents.scope && <p lang="en" dir="ltr">{documents.scope}</p>}
-                        <ul lang="en" dir="ltr">{documents.items.map((item) => <li key={item}>{item}</li>)}</ul>
+                        {documents.scope && <ReviewText as="p" reviewKey={'document.' + entry.slug + '.scope'} source={documents.scope} />}
+                        <ul lang="en" dir="ltr">{documents.items.map((item, index) => (
+                          <li key={item}><ReviewText reviewKey={'document.' + entry.slug + '.' + index} source={item} /></li>
+                        ))}</ul>
                         <p><a href={documents.sourceUrl} target="_blank" rel="noreferrer">{t('documentSource')}</a></p>
                       </details>
-                    ) : <p lang="en" dir="ltr">{english('documentFallback')}</p>
+                    ) : <ReviewText as="p" reviewKey="documentFallback" />
                   )}
                   {source && <p><a href={source} target="_blank" rel="noreferrer">{eligibilityText(lang, 'official')}</a></p>}
                 </article>
@@ -133,7 +143,7 @@ export default function EligibilityResults({ data, entries, onEdit, heading, sin
       })}
       {!single && (
         <div className="result-coverage">
-          <p lang="en" dir="ltr">{english('matchCoverage')}</p>
+          <ReviewText as="p" reviewKey="matchCoverage" />
           <p><Link to="/schemes">{t('browse')}</Link></p>
         </div>
       )}

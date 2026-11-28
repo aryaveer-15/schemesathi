@@ -2,6 +2,8 @@ const { access, mkdir, readFile, writeFile } = require('node:fs/promises');
 const path = require('node:path');
 const { inventory, money, deadlines } = require('../verificationInventory');
 const { checklist } = require('./verificationChecklist');
+const { approvedText } = require('../../client/src/locales/reviewedText.js');
+const { criticalKeys } = require('../../client/src/locales/criticalKeys.js');
 const { dictionaries, languages } = require('../../client/src/locales/index.js');
 
 const root = path.resolve(__dirname, '../..');
@@ -93,24 +95,12 @@ async function bannerRows(source, assets = path.join(client, 'assets')) {
   return [['Scheme', 'Banner file name', 'Current alt text', 'Does the photo fit', 'Source or licence', 'Notes', 'Checked by'], ...rows];
 }
 
-const criticalKeys = new Set([
-  ...inventory.flatMap(({ criteria }) => criteria.map(({ key }) => key)),
-  'ageAtLeast', 'ageRange', 'ageRequired', 'answerOne', 'answerRequired', 'authorityReviewReason',
-  'disclaimer', 'documentChecklist', 'documentFallback', 'documentSource', 'eligibilityRequirements',
-  'eligibilityResults', 'eligibilitySource', 'expectedAnswer', 'familyException', 'healthScope', 'helpApplyAnswer',
-  'housingScope', 'howToGetBenefit', 'howToVerifyScheme', 'likelyMatches', 'matchCoverage', 'matched',
-  'matchedCheck', 'missingReason', 'notMatched', 'officialCheck', 'openOfficialPortal', 'pensionScope',
-  'possibleMatches', 'preliminaryResultNotice', 'profileAge', 'profileArea', 'profileDebit', 'profileIncome',
-  'profileSavings', 'publicAccessResults', 'publicSchemeAccess', 'resultReasons', 'review', 'uncertainReason',
-  'unknown', 'unmatched', 'unmetReason', 'verifyListAndLocally', 'verifyLocally', 'verifyOfficialList',
-]);
-
-function translationRows(code) {
+function translationRows(code, approvals) {
   const keys = Object.keys(dictionaries.en);
   const ordered = [...keys.filter((key) => criticalKeys.has(key)), ...keys.filter((key) => !criticalKeys.has(key))];
   return [
     ['Language', 'Key', 'English text', 'Current translation', 'OK or Corrected', 'Corrected text', 'Reviewer', 'Date'],
-    ...ordered.map((key) => [code, key, dictionaries.en[key], dictionaries[code][key] ?? '', '', '', '', '']),
+    ...ordered.map((key) => [code, key, dictionaries.en[key], approvedText(code, key, dictionaries.en[key], approvals) ?? dictionaries[code][key] ?? '', '', '', '', '']),
   ];
 }
 
@@ -119,12 +109,13 @@ async function exportReviews({ output = path.join(root, 'exports'), report } = {
     if (error.code !== 'ENOENT') throw error;
     throw new Error('LINK_REPORT.md is missing. Generate it with npm.cmd --prefix server run check:links.');
   });
+  const approvals = JSON.parse(await readFile(path.join(root, 'server', 'translationApprovals.json'), 'utf8'));
   const bannerSource = await readFile(path.join(client, 'SchemeBanner.jsx'), 'utf8');
   const files = new Map([
     ['verification.csv', verificationRows()],
     ['links.csv', linkRows(linkReport)],
     ['banners.csv', await bannerRows(bannerSource)],
-    ...languages.filter(({ code }) => code !== 'en').map(({ code }) => [`translations_${code}.csv`, translationRows(code)]),
+    ...languages.filter(({ code }) => code !== 'en').map(({ code }) => [`translations_${code}.csv`, translationRows(code, approvals)]),
   ].map(([name, rows]) => [name, csv(rows)]));
   await mkdir(output, { recursive: true });
   // Exclusive writes keep a second export from overwriting anyone's review.

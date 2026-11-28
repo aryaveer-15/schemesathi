@@ -1,10 +1,9 @@
-const fs = require('node:fs');
+const updateLedger = require('./updateLedger');
 const { resolve } = require('node:path');
 const { parseArgs } = require('node:util');
 const { bySlug } = require('../verification');
 
 const file = resolve(__dirname, '../verificationRecords.json');
-const readRecords = (path) => JSON.parse(fs.readFileSync(path, 'utf8'));
 
 function proposedRecords(records, values, today = new Date().toISOString().slice(0, 10)) {
   const row = bySlug.get(values.scheme);
@@ -41,29 +40,7 @@ function proposedRecords(records, values, today = new Date().toISOString().slice
   return { ...records, [values.scheme]: { ...previous, review } };
 }
 
-function updateLedger(apply, update, path = file) {
-  const lock = path + '.lock';
-  const temp = path + '.' + process.pid + '.tmp';
-  const handle = apply ? fs.openSync(lock, 'wx') : null;
-  try {
-    const before = readRecords(path);
-    const after = update(before);
-    if (apply && after !== before) {
-      const sorted = Object.fromEntries(Object.entries(after).sort(([a], [b]) => a.localeCompare(b)));
-      fs.writeFileSync(temp, JSON.stringify(sorted, null, 2) + '\n', { flag: 'wx' });
-      fs.renameSync(temp, path);
-    }
-    return after;
-  } finally {
-    if (handle !== null) {
-      if (fs.existsSync(temp)) fs.unlinkSync(temp);
-      fs.closeSync(handle);
-      fs.unlinkSync(lock);
-    }
-  }
-}
-
-function record(options, { path, output = console.log, today } = {}) {
+function record(options, { path = file, output = console.log, today } = {}) {
   return updateLedger(options.apply, (before) => {
     const after = proposedRecords(before, options, today);
     const block = (data) => JSON.stringify({ [options.scheme]: data[options.scheme] ?? null }, null, 2).split('\n');
@@ -88,4 +65,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { proposedRecords, record, updateLedger };
+module.exports = { proposedRecords, record };

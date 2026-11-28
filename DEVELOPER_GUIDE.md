@@ -147,6 +147,24 @@ Keep a copy of old exports and duplicate any completed Google Sheet tab before c
 
 **Last verified** is the date a human recorded a **yes** for the current scheme snapshot. A **no**, **unclear**, changed snapshot or missing review is pending. Restart or redeploy after saving a review for the public page to pick up the new ledger.
 
+## Review and publish translations
+
+Use `exports/translations_<code>.csv` for the dictionary keys or export critical strings for one language. The critical CSV adds scheme summaries, questions, criteria, application instructions and document text. New critical rows start with an empty **Current translation**. Fill **Corrected text** and mark **Corrected** to submit a translation from scratch. Use **OK** to approve the exported current text as written. Keep the English, key and language columns. Add the reviewer's name and date in YYYY-MM-DD format. Leave untouched rows blank.
+
+```powershell
+npm.cmd --prefix server run translations:export -- --language ur
+$sheet = Read-Host 'Path to one reviewed translation CSV'
+npm.cmd --prefix server run translations:import -- --file $sheet --language ur
+# Read the counts, rejected rows and diff before saving.
+npm.cmd --prefix server run translations:import -- --file $sheet --language ur --apply
+git diff -- server/translationApprovals.json
+npm.cmd --prefix client run build
+```
+
+Replace `ur` with the reviewed language code. The importer checks protected text, including numbers, amount units, catalogue names, links and placeholders. A native reviewer still needs to check meaning, especially negation, dates, cutoffs and which number goes with which condition. Keep exports in separate files if re-exporting.
+
+The app reads approved text at build time. Restart Vite during development or rebuild and deploy to publish. Reviewer names and dates stay in the ledger and are excluded from the browser bundle. Record names only with the reviewers' consent. If the English source changes, the old approval stops applying. Critical copy returns to English with the existing review notice, so a page can contain both languages. A long approved translation may need a fresh mobile layout and screen-reader check.
+
 ## Environment variables
 
 | Variable | Secret? | Use |

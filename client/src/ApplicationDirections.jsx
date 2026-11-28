@@ -1,6 +1,7 @@
+import ReviewText from './ReviewText';
 import { useLang } from './useLang';
 
-export default function ApplicationDirections({ application }) {
+export default function ApplicationDirections({ application, slug, result = false }) {
   const { t } = useLang();
   if (!application?.online && !application?.visit) return null;
 
@@ -9,11 +10,13 @@ export default function ApplicationDirections({ application }) {
       <strong>{t('howToGetBenefit')}</strong>
       {application.online && (
         <>
-          <p lang="en" dir="ltr">{application.online}</p>
+          <ReviewText as="p" reviewKey={(result ? 'result.' : 'application.') + slug + '.online'}
+            alternateKey={result ? 'application.' + slug + '.online' : undefined} source={application.online} />
           <p><a href={application.url} target="_blank" rel="noreferrer">{t('openOfficialPortal')}</a></p>
         </>
       )}
-      {application.visit && <p lang="en" dir="ltr">{application.visit}</p>}
+      {application.visit && <ReviewText as="p" reviewKey={(result ? 'result.' : 'application.') + slug + '.visit'}
+            alternateKey={result ? 'application.' + slug + '.visit' : undefined} source={application.visit} />}
     </div>
   );
 }
